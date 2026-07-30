@@ -1,6 +1,6 @@
 import { getOfficeCategoryName, getOfficeName, getDepartmentName, getDesignationName, getUser } from '../data/mockData';
 
-const API_BASE_URL = 'https://softtech-api.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://softtech-api.onrender.com/api';
 
 export function formatUserGroupPayload(formData) {
   return {
@@ -34,7 +34,7 @@ export async function fetchUserGroups() {
     const response = await fetch(`${API_BASE_URL}/usergroups`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-
+    
     return data.map(g => ({
       id: g.id,
       group_name: g.groupName,
