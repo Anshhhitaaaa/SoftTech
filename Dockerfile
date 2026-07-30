@@ -14,8 +14,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Render exposes PORT dynamically
+# Environment variables for Linux container stability
 ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=false
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "SystemConfigApi.dll"]
