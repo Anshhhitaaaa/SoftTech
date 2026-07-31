@@ -3,13 +3,11 @@ using SystemConfigApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Disable file watchers for Linux Docker container compatibility
 builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
 {
     config.Sources.Clear();
     var env = hostingContext.HostingEnvironment;
     config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-          .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: false)
           .AddEnvironmentVariables();
 });
 
@@ -17,7 +15,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure CORS policy to allow both local & deployed Vercel frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -31,12 +28,14 @@ builder.Services.AddCors(options =>
 var connectionString = builder.Configuration.GetConnectionString("PostgreSQLConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(connectionString);
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        options.UseNpgsql(connectionString);
+    }
 });
 
 var app = builder.Build();
 
-// Enable Swagger in production and development for easy API testing
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -58,8 +57,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
+        Console.WriteLine(ex.Message);
     }
 }
 

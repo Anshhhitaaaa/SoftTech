@@ -1,5 +1,3 @@
-// Database Lookup Data
-
 export const officeCategories = [
   { id: 1, name: "Corporate Office" },
   { id: 2, name: "Zonal Office" },

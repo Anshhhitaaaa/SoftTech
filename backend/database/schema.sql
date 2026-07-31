@@ -1,9 +1,3 @@
--- =============================================================================
--- PostgreSQL Database Schema & Initial Seed Data
--- Database Name: system_config_db
--- =============================================================================
-
--- 1. Create Lookup Tables
 CREATE TABLE IF NOT EXISTS office_categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL UNIQUE
@@ -32,7 +26,6 @@ CREATE TABLE IF NOT EXISTS users (
     designation_id INT NOT NULL REFERENCES designations(id) ON DELETE CASCADE
 );
 
--- 2. Create User Groups Table
 CREATE TABLE IF NOT EXISTS user_groups (
     id SERIAL PRIMARY KEY,
     group_name VARCHAR(200) NOT NULL,
@@ -41,7 +34,6 @@ CREATE TABLE IF NOT EXISTS user_groups (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Create Group Members Junction Table
 CREATE TABLE IF NOT EXISTS group_members (
     id SERIAL PRIMARY KEY,
     group_id INT NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
@@ -52,7 +44,6 @@ CREATE TABLE IF NOT EXISTS group_members (
     designation_id INT NOT NULL REFERENCES designations(id) ON DELETE CASCADE
 );
 
--- 4. Create Individual Access Table
 CREATE TABLE IF NOT EXISTS individual_access (
     id SERIAL PRIMARY KEY,
     office_category_id INT NOT NULL REFERENCES office_categories(id) ON DELETE CASCADE,
@@ -65,7 +56,6 @@ CREATE TABLE IF NOT EXISTS individual_access (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Seed Lookup Data
 INSERT INTO office_categories (id, name) VALUES
 (1, 'Corporate Office'),
 (2, 'Zonal Office'),
@@ -116,8 +106,6 @@ INSERT INTO users (id, full_name, department_id, designation_id) VALUES
 (12, 'Neha Kapoor', 1, 4)
 ON CONFLICT (id) DO NOTHING;
 
-
--- Reset Sequences for SERIAL columns
 SELECT setval('office_categories_id_seq', (SELECT MAX(id) FROM office_categories));
 SELECT setval('offices_id_seq', (SELECT MAX(id) FROM offices));
 SELECT setval('departments_id_seq', (SELECT MAX(id) FROM departments));

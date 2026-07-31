@@ -16,23 +16,19 @@ import {
 } from './services/api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access'
+  const [activeTab, setActiveTab] = useState('user-groups');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Items State
   const [userGroups, setUserGroups] = useState([]);
   const [individualAccessList, setIndividualAccessList] = useState([]);
 
-  // Modals State
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isIndividualModalOpen, setIsIndividualModalOpen] = useState(false);
   
-  // Master Detail Modal State
   const [masterDetailItem, setMasterDetailItem] = useState(null);
   const [isMasterDetailOpen, setIsMasterDetailOpen] = useState(false);
 
-  // Load Data from API on Mount
   const loadData = async () => {
     setIsLoading(true);
     const groups = await fetchUserGroups();
@@ -49,7 +45,6 @@ export default function App() {
     loadData();
   }, []);
 
-  // Handlers for adding items
   const handleCreateGroup = async (newGroupData) => {
     const savedGroup = await createUserGroupApi(newGroupData);
     if (savedGroup) {
@@ -68,7 +63,6 @@ export default function App() {
     }
   };
 
-  // Handlers for deleting items
   const handleDeleteGroup = async (id) => {
     await deleteUserGroupApi(id);
     setUserGroups(userGroups.filter(g => g.id !== id));
@@ -79,13 +73,11 @@ export default function App() {
     setIndividualAccessList(individualAccessList.filter(i => i.id !== id));
   };
 
-  // Master Detail open handler
   const handleOpenMasterDetail = (item) => {
     setMasterDetailItem(item);
     setIsMasterDetailOpen(true);
   };
 
-  // Filtered lists based on search matching database table schema
   const filteredGroups = userGroups.filter(g =>
     (g.group_name && g.group_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (g.dms_access_level && g.dms_access_level.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -103,7 +95,6 @@ export default function App() {
   return (
     <div className="h-screen overflow-hidden bg-slate-50/60 text-slate-800 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] antialiased">
       
-      {/* Navigation Header */}
       <HeaderTabNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -111,16 +102,12 @@ export default function App() {
         individualCount={individualAccessList.length}
       />
 
-      {/* Main Container Area */}
       <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col">
         
-        {/* Main Card Container */}
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-200">
           
-          {/* Card Header & Search Bar Bar */}
           <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30 shrink-0">
             
-            {/* Title & Icon on Left */}
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
                 {isGroupTab ? <Users className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -135,10 +122,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right Action Bar: Search Input & Buttons */}
             <div className="flex items-center gap-3">
               
-              {/* Refresh Button */}
               <button
                 onClick={loadData}
                 disabled={isLoading}
@@ -148,7 +133,6 @@ export default function App() {
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-indigo-600' : ''}`} />
               </button>
 
-              {/* Search Box */}
               <div className="relative w-full sm:w-64">
                 <input
                   type="text"
@@ -160,7 +144,6 @@ export default function App() {
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
               </div>
 
-              {/* Action Button in header if items exist */}
               {rawItems.length > 0 && (
                 <button
                   onClick={() => isGroupTab ? setIsGroupModalOpen(true) : setIsIndividualModalOpen(true)}
@@ -175,7 +158,6 @@ export default function App() {
 
           </div>
 
-          {/* Card Main Body */}
           <div className="p-4 flex-1 flex flex-col items-center justify-center min-h-0 overflow-y-auto">
             {rawItems.length === 0 ? (
               <EmptyState
@@ -196,7 +178,6 @@ export default function App() {
 
       </main>
 
-      {/* Modals */}
       <CreateGroupModal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
@@ -209,7 +190,6 @@ export default function App() {
         onSubmit={handleAddIndividualAccess}
       />
 
-      {/* Master Detail Popup */}
       <MasterDetailModal
         item={masterDetailItem}
         type={activeTab}

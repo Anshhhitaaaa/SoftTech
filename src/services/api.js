@@ -6,7 +6,6 @@ const isLocalhost = typeof window !== 'undefined' && Boolean(
   window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-// Uses Vercel environment variable VITE_API_URL or defaults to your active Render live backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (isLocalhost ? 'http://localhost:5000/api' : 'https://softtech-api.onrender.com/api');
 
@@ -63,7 +62,6 @@ export async function fetchUserGroups() {
       }))
     }));
   } catch (error) {
-    console.error('.NET API fetchUserGroups error:', error);
     return null;
   }
 }
@@ -98,7 +96,6 @@ export async function createUserGroupApi(formData) {
       }))
     };
   } catch (error) {
-    console.error('.NET API createUserGroupApi error:', error);
     return null;
   }
 }
@@ -108,7 +105,6 @@ export async function deleteUserGroupApi(id) {
     const response = await fetch(`${API_BASE_URL}/usergroups/${id}`, { method: 'DELETE' });
     return response.ok;
   } catch (error) {
-    console.error('.NET API deleteUserGroupApi error:', error);
     return false;
   }
 }
@@ -139,7 +135,6 @@ export async function fetchIndividualAccesses() {
       created_at: i.createdAt
     }));
   } catch (error) {
-    console.error('.NET API fetchIndividualAccesses error:', error);
     return null;
   }
 }
@@ -174,7 +169,6 @@ export async function createIndividualAccessApi(formData) {
       created_at: i.createdAt
     };
   } catch (error) {
-    console.error('.NET API createIndividualAccessApi error:', error);
     return null;
   }
 }
@@ -184,7 +178,6 @@ export async function deleteIndividualAccessApi(id) {
     const response = await fetch(`${API_BASE_URL}/individualaccess/${id}`, { method: 'DELETE' });
     return response.ok;
   } catch (error) {
-    console.error('.NET API deleteIndividualAccessApi error:', error);
     return false;
   }
 }
