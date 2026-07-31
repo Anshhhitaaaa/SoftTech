@@ -16,21 +16,21 @@ export function formatUserGroupPayload(formData) {
     workflowRole: formData.workflow_role,
     members: (formData.selected_user_ids || []).map(userId => ({
       userId: Number(userId),
-      officeCategoryId: Number(formData.office_category_id),
-      officeId: Number(formData.office_id),
-      departmentId: Number(formData.department_id),
-      designationId: Number(formData.designation_id)
+      officeCategoryId: Number(formData.office_category_id || 1),
+      officeId: Number(formData.office_id || 1),
+      departmentId: Number(formData.department_id || 1),
+      designationId: Number(formData.designation_id || 1)
     }))
   };
 }
 
 export function formatIndividualAccessPayload(formData) {
   return {
-    officeCategoryId: Number(formData.office_category_id),
-    officeId: Number(formData.office_id),
-    departmentId: Number(formData.department_id),
-    designationId: Number(formData.designation_id),
-    targetUserId: Number(formData.target_user_id),
+    officeCategoryId: Number(formData.office_category_id || 1),
+    officeId: Number(formData.office_id || 1),
+    departmentId: Number(formData.department_id || 1),
+    designationId: Number(formData.designation_id || 1),
+    targetUserId: Number(formData.target_user_id || 1),
     dmsAccessLevel: formData.dms_access_level,
     workflowRole: formData.workflow_role
   };
@@ -42,25 +42,25 @@ export async function fetchUserGroups() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     
-    return data.map(g => ({
-      id: g.id,
-      group_name: g.groupName,
-      dms_access_level: g.dmsAccessLevel,
-      workflow_role: g.workflowRole,
-      created_at: g.createdAt,
-      members: g.members.map(m => ({
-        user_id: m.userId,
-        user_name: m.userName,
-        office_category_id: m.officeCategoryId,
-        office_category_name: m.officeCategoryName,
-        office_id: m.officeId,
-        office_name: m.officeName,
-        department_id: m.departmentId,
-        department_name: m.departmentName,
-        designation_id: m.designationId,
-        designation_name: m.designationName
-      }))
-    }));
+    return data.map(g => {
+      const firstMember = g.members && g.members.length > 0 ? g.members[0] : null;
+      return {
+        id: g.id,
+        group_name: g.groupName,
+        dms_access_level: g.dmsAccessLevel,
+        workflow_role: g.workflowRole,
+        created_at: g.createdAt,
+        office_category_id: firstMember ? firstMember.officeCategoryId : 1,
+        office_id: firstMember ? firstMember.officeId : 1,
+        department_id: firstMember ? firstMember.departmentId : 1,
+        designation_id: firstMember ? firstMember.designationId : 1,
+        members: g.members || [],
+        users_list: (g.members || []).map(m => ({
+          id: m.userId,
+          full_name: m.userName
+        }))
+      };
+    });
   } catch (error) {
     return null;
   }
@@ -76,23 +76,21 @@ export async function createUserGroupApi(formData) {
     });
     if (!response.ok) throw new Error(`Failed to create group. Status: ${response.status}`);
     const g = await response.json();
+    const firstMember = g.members && g.members.length > 0 ? g.members[0] : null;
     return {
       id: g.id,
       group_name: g.groupName,
       dms_access_level: g.dmsAccessLevel,
       workflow_role: g.workflowRole,
       created_at: g.createdAt,
-      members: g.members.map(m => ({
-        user_id: m.userId,
-        user_name: m.userName,
-        office_category_id: m.officeCategoryId,
-        office_category_name: m.officeCategoryName,
-        office_id: m.officeId,
-        office_name: m.officeName,
-        department_id: m.departmentId,
-        department_name: m.departmentName,
-        designation_id: m.designationId,
-        designation_name: m.designationName
+      office_category_id: firstMember ? firstMember.officeCategoryId : (Number(formData.office_category_id) || 1),
+      office_id: firstMember ? firstMember.officeId : (Number(formData.office_id) || 1),
+      department_id: firstMember ? firstMember.departmentId : (Number(formData.department_id) || 1),
+      designation_id: firstMember ? firstMember.designationId : (Number(formData.designation_id) || 1),
+      members: g.members || [],
+      users_list: (g.members || []).map(m => ({
+        id: m.userId,
+        full_name: m.userName
       }))
     };
   } catch (error) {

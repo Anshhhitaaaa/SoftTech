@@ -7,6 +7,12 @@ import CreateGroupModal from './components/CreateGroupModal';
 import AddIndividualAccessModal from './components/AddIndividualAccessModal';
 import MasterDetailModal from './components/MasterDetailModal';
 import { 
+  getOfficeCategoryName, 
+  getOfficeName, 
+  getDepartmentName, 
+  getDesignationName 
+} from './data/mockData';
+import { 
   fetchUserGroups, 
   createUserGroupApi, 
   deleteUserGroupApi, 
@@ -78,15 +84,37 @@ export default function App() {
     setIsMasterDetailOpen(true);
   };
 
-  const filteredGroups = userGroups.filter(g =>
-    (g.group_name && g.group_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (g.dms_access_level && g.dms_access_level.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Universal Omni-Search across all fields
+  const filteredGroups = userGroups.filter(g => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
 
-  const filteredIndividual = individualAccessList.filter(i =>
-    (i.user?.full_name && i.user.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (i.dms_access_level && i.dms_access_level.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+    const matchName = g.group_name?.toLowerCase().includes(term);
+    const matchDms = g.dms_access_level?.toLowerCase().includes(term);
+    const matchRole = g.workflow_role?.toLowerCase().includes(term);
+    const matchCat = (g.office_category_name || getOfficeCategoryName(g.office_category_id))?.toLowerCase().includes(term);
+
+    const matchMembers = (g.users_list || g.members || []).some(m =>
+      (m.full_name || m.user_name || '')?.toLowerCase().includes(term)
+    );
+
+    return matchName || matchDms || matchRole || matchCat || matchMembers;
+  });
+
+  const filteredIndividual = individualAccessList.filter(i => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+
+    const matchUserName = i.user?.full_name?.toLowerCase().includes(term);
+    const matchDept = (i.department_name || getDepartmentName(i.department_id || i.user?.department_id))?.toLowerCase().includes(term);
+    const matchDesig = (i.designation_name || getDesignationName(i.designation_id || i.user?.designation_id))?.toLowerCase().includes(term);
+    const matchOffice = (i.office_name || getOfficeName(i.office_id))?.toLowerCase().includes(term);
+    const matchOfficeCat = (i.office_category_name || getOfficeCategoryName(i.office_category_id))?.toLowerCase().includes(term);
+    const matchDms = i.dms_access_level?.toLowerCase().includes(term);
+    const matchRole = i.workflow_role?.toLowerCase().includes(term);
+
+    return matchUserName || matchDept || matchDesig || matchOffice || matchOfficeCat || matchDms || matchRole;
+  });
 
   const isGroupTab = activeTab === 'user-groups';
   const currentItems = isGroupTab ? filteredGroups : filteredIndividual;
@@ -133,12 +161,13 @@ export default function App() {
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-indigo-600' : ''}`} />
               </button>
 
-              <div className="relative w-full sm:w-64">
+              {/* Universal Search Bar across all fields */}
+              <div className="relative w-full sm:w-80">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={isGroupTab ? "Search group policy..." : "Search user or dept..."}
+                  placeholder="Search by name, dept, office, role, access..."
                   className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300/90 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 placeholder:text-slate-400 shadow-2xs font-medium"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
