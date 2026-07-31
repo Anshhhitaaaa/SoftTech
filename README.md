@@ -87,7 +87,26 @@ Open your browser at `http://localhost:5173`.
 
 ---
 
+## 🧪 Automated Testing Suites
+
+### 1. Backend API Unit Tests (xUnit)
+Run xUnit unit tests for API Controllers & DbContext:
+```bash
+cd backend/SystemConfigApi.Tests
+dotnet test
+```
+
+### 2. Frontend UI E2E Tests (Playwright)
+Run end-to-end browser automation tests:
+```bash
+npm install -D @playwright/test
+npx playwright test
+```
+
+---
+
 ## 📦 Deployment Configuration
 
 - **Backend Docker Container**: Packaged using Docker SDK 8.0 with Linux container compatibility flags (`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`, `DOTNET_USE_POLLING_FILE_WATCHER=false`).
 - **CORS Configuration**: Configured in `Program.cs` to allow cross-origin requests from Vercel frontend.
+
