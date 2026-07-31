@@ -2,8 +2,6 @@
 
 # Hide HTML and JSON files from repository language statistics
 *.html linguist-detectable=false
-*.json linguist-detectable=false
-*.sql linguist-detectable=false
 *.md linguist-documentation
 
 # Set JavaScript for React frontend
