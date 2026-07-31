@@ -1,6 +1,18 @@
 import React from 'react';
-import { Eye, Trash2, Users, User, ShieldCheck, FileText, CheckSquare, Award } from 'lucide-react';
+import { Eye, Trash2, Users, User, ShieldCheck, FileText, CheckSquare, Award, Clock } from 'lucide-react';
 import { getOfficeCategoryName, getOfficeName, getDepartmentName, getDesignationName } from '../data/mockData';
+
+const formatDateWithTime = (dateStr) => {
+  if (!dateStr) return 'Jul 31, 2026, 12:00 PM';
+  try {
+    const d = new Date(dateStr);
+    const datePart = d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${datePart}, ${timePart}`;
+  } catch {
+    return 'Jul 31, 2026, 12:00 PM';
+  }
+};
 
 export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
   const isGroup = type === 'user-groups';
@@ -18,7 +30,7 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
               <th className="py-3.5 px-4">DMS Access</th>
               <th className="py-3.5 px-4">Template Workflow Access</th>
               <th className="py-3.5 px-4">{isGroup ? 'Members' : 'Office Location'}</th>
-              <th className="py-3.5 px-4">Created Date</th>
+              <th className="py-3.5 px-4">Created Date & Time</th>
               <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -30,7 +42,6 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
               return (
                 <tr key={item.id} className="hover:bg-indigo-50/30 transition-colors group">
                   
-                  {/* Name Column */}
                   <td className="py-3.5 px-4 font-bold text-slate-900">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs group-hover:scale-105 transition-transform">
@@ -47,7 +58,6 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
                     </div>
                   </td>
 
-                  {/* Office / Dept Column */}
                   <td className="py-3.5 px-4 text-slate-600">
                     {isGroup ? (
                       <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold">
@@ -61,7 +71,6 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
                     )}
                   </td>
 
-                  {/* DMS Access Tag */}
                   <td className="py-3.5 px-4">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
                       isFullControl
@@ -73,7 +82,6 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
                     </span>
                   </td>
 
-                  {/* Template Workflow Access Tag */}
                   <td className="py-3.5 px-4">
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
                       isApprover
@@ -85,7 +93,6 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
                     </span>
                   </td>
 
-                  {/* Members / Office Column */}
                   <td className="py-3.5 px-4 text-slate-600">
                     {isGroup ? (
                       <div className="flex items-center -space-x-1.5 overflow-hidden">
@@ -112,12 +119,13 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
                     )}
                   </td>
 
-                  {/* Created Date */}
-                  <td className="py-3.5 px-4 text-slate-500 text-[11px]">
-                    {item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Jul 29, 2026'}
+                  <td className="py-3.5 px-4 text-slate-600 text-[11px] font-medium">
+                    <div className="flex items-center gap-1.5 text-slate-600">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{formatDateWithTime(item.created_at)}</span>
+                    </div>
                   </td>
 
-                  {/* Actions */}
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <button

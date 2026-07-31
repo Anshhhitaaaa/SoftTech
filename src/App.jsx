@@ -6,19 +6,19 @@ import DataTable from './components/DataTable';
 import CreateGroupModal from './components/CreateGroupModal';
 import AddIndividualAccessModal from './components/AddIndividualAccessModal';
 import MasterDetailModal from './components/MasterDetailModal';
-import { 
-  getOfficeCategoryName, 
-  getOfficeName, 
-  getDepartmentName, 
-  getDesignationName 
+import {
+  getOfficeCategoryName,
+  getOfficeName,
+  getDepartmentName,
+  getDesignationName
 } from './data/mockData';
-import { 
-  fetchUserGroups, 
-  createUserGroupApi, 
-  deleteUserGroupApi, 
-  fetchIndividualAccesses, 
-  createIndividualAccessApi, 
-  deleteIndividualAccessApi 
+import {
+  fetchUserGroups,
+  createUserGroupApi,
+  deleteUserGroupApi,
+  fetchIndividualAccesses,
+  createIndividualAccessApi,
+  deleteIndividualAccessApi
 } from './services/api';
 
 export default function App() {
@@ -31,7 +31,7 @@ export default function App() {
 
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isIndividualModalOpen, setIsIndividualModalOpen] = useState(false);
-  
+
   const [masterDetailItem, setMasterDetailItem] = useState(null);
   const [isMasterDetailOpen, setIsMasterDetailOpen] = useState(false);
 
@@ -122,7 +122,7 @@ export default function App() {
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50/60 text-slate-800 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] antialiased">
-      
+
       <HeaderTabNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -131,11 +131,11 @@ export default function App() {
       />
 
       <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col">
-        
+
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-200">
-          
+
           <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30 shrink-0">
-            
+
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
                 {isGroupTab ? <Users className="w-4 h-4" /> : <User className="w-4 h-4" />}
@@ -151,7 +151,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-3">
-              
+
               <button
                 onClick={loadData}
                 disabled={isLoading}
