@@ -1,0 +1,14 @@
+# GitHub Linguist Language Override Rules
+
+# Hide HTML and JSON files from repository language statistics
+*.html linguist-detectable=false
+*.json linguist-detectable=false
+*.sql linguist-detectable=false
+*.md linguist-documentation
+
+# Set JavaScript for React frontend
+src/**/*.js linguist-language=JavaScript
+src/**/*.jsx linguist-language=JavaScript
+
+# Set C# for .NET Core backend
+backend/**/*.cs linguist-language=C#
