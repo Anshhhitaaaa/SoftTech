@@ -20,18 +20,18 @@ export default function DataTable({ items, type, onViewDetail, onDeleteItem }) {
   if (!items || items.length === 0) return null;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-700 border-collapse">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-              <th className="py-3.5 px-4">{isGroup ? 'Group Name' : 'User Name'}</th>
-              <th className="py-3.5 px-4">{isGroup ? 'Office Category' : 'Department & Role'}</th>
-              <th className="py-3.5 px-4">DMS Access</th>
-              <th className="py-3.5 px-4">Template Workflow Access</th>
-              <th className="py-3.5 px-4">{isGroup ? 'Members' : 'Office Location'}</th>
-              <th className="py-3.5 px-4">Created Date & Time</th>
-              <th className="py-3.5 px-4 text-right">Actions</th>
+    <div className="w-full h-full max-h-full bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm flex flex-col">
+      <div className="overflow-y-auto flex-1 min-h-0 max-h-full">
+        <table className="w-full text-left text-xs text-slate-700 border-collapse relative">
+          <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200/80 shadow-2xs">
+            <tr className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <th className="py-3.5 px-4 bg-slate-50/95">{isGroup ? 'Group Name' : 'User Name'}</th>
+              <th className="py-3.5 px-4 bg-slate-50/95">{isGroup ? 'Office Category' : 'Department & Role'}</th>
+              <th className="py-3.5 px-4 bg-slate-50/95">DMS Access</th>
+              <th className="py-3.5 px-4 bg-slate-50/95">Template Workflow Access</th>
+              <th className="py-3.5 px-4 bg-slate-50/95">{isGroup ? 'Members' : 'Office Location'}</th>
+              <th className="py-3.5 px-4 bg-slate-50/95">Created Date & Time</th>
+              <th className="py-3.5 px-4 text-right bg-slate-50/95">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium">

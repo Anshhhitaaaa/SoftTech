@@ -187,7 +187,7 @@ export default function App() {
 
           </div>
 
-          <div className="p-4 flex-1 flex flex-col items-center justify-center min-h-0 overflow-y-auto">
+          <div className="p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
             {rawItems.length === 0 ? (
               <EmptyState
                 type={activeTab}
