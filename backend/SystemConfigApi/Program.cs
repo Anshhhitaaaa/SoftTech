@@ -3,14 +3,6 @@ using SystemConfigApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
-{
-    config.Sources.Clear();
-    var env = hostingContext.HostingEnvironment;
-    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-          .AddEnvironmentVariables();
-});
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -25,7 +17,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("PostgreSQLConnection");
+var rawConnStr = builder.Configuration.GetConnectionString("PostgreSQLConnection") 
+                 ?? Environment.GetEnvironmentVariable("ConnectionStrings__PostgreSQLConnection");
+
+var connectionString = ParsePostgresConnectionString(rawConnStr);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (!string.IsNullOrEmpty(connectionString))
@@ -57,8 +53,32 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine(ex.Message);
+        Console.WriteLine($"Database init note: {ex.Message}");
     }
 }
 
 app.Run();
+
+static string ParsePostgresConnectionString(string? connStr)
+{
+    if (string.IsNullOrWhiteSpace(connStr)) return string.Empty;
+    if (connStr.StartsWith("postgres://") || connStr.StartsWith("postgresql://"))
+    {
+        try
+        {
+            var uri = new Uri(connStr);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            var host = uri.Host;
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.TrimStart('/');
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+        }
+        catch
+        {
+            return connStr;
+        }
+    }
+    return connStr;
+}
