@@ -1,0 +1,56 @@
+name: SoftTech CI/CD Pipeline & SonarQube Analysis
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build-and-analyze:
+    name: Build UI & API with SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---------------------------
+      # 1. Setup Node.js & Build UI
+      # ---------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Frontend (Vite UI)
+        run: npm run build
+
+      # ---------------------------
+      # 2. Setup .NET 8 & Build API
+      # ---------------------------
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore .NET Dependencies
+        run: dotnet restore backend/SystemConfigApi/SystemConfigApi.csproj
+
+      - name: Build .NET API
+        run: dotnet build backend/SystemConfigApi/SystemConfigApi.csproj --no-restore --configuration Release
+
+      # ---------------------------
+      # 3. SonarQube Scanner Analysis
+      # ---------------------------
+      - name: SonarQube Code Quality Scan
+        uses: SonarSource/sonarqube-scan-action@v3.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

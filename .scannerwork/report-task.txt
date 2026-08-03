@@ -1,0 +1,6 @@
+projectKey=SoftTech-app
+serverUrl=http://localhost:9000
+serverVersion=26.7.0.124771
+dashboardUrl=http://localhost:9000/dashboard?id=SoftTech-app
+ceTaskId=91fec297-5fa9-4d01-bfc9-46d4356601eb
+ceTaskUrl=http://localhost:9000/api/ce/task?id=91fec297-5fa9-4d01-bfc9-46d4356601eb
