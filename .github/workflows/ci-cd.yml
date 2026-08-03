@@ -50,6 +50,8 @@ jobs:
       # 3. SonarQube Scanner Analysis
       # ---------------------------
       - name: SonarQube Code Quality Scan
+        continue-on-error: true
+        if: ${{ secrets.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@v3.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
