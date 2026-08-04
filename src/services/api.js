@@ -179,3 +179,115 @@ export async function deleteIndividualAccessApi(id) {
     return false;
   }
 }
+
+// ----------------------------------------------------
+// Document Automation & Workflow API Functions
+// ----------------------------------------------------
+export async function fetchDocuments(status = null) {
+  try {
+    const url = status ? `${API_BASE_URL}/documents?status=${encodeURIComponent(status)}` : `${API_BASE_URL}/documents`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    return data.map(d => ({
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      content_html: d.contentHtml,
+      status: d.status,
+      created_by_user_id: d.createdByUserId,
+      created_by_user_name: d.createdByUserName,
+      reviewed_by_user_id: d.reviewedByUserId,
+      reviewed_by_user_name: d.reviewedByUserName,
+      approved_by_user_id: d.approvedByUserId,
+      approved_by_user_name: d.approvedByUserName,
+      reviewer_notes: d.reviewerNotes,
+      created_at: d.createdAt,
+      updated_at: d.updatedAt
+    }));
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function createDocumentApi(docData) {
+  const payload = {
+    title: docData.title,
+    category: docData.category || "Audit & Compliance Report",
+    contentHtml: docData.content_html,
+    createdByUserId: Number(docData.created_by_user_id || 1),
+    submitForReview: Boolean(docData.submit_for_review)
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`Failed to create document. Status: ${response.status}`);
+    const d = await response.json();
+    return {
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      content_html: d.contentHtml,
+      status: d.status,
+      created_by_user_id: d.createdByUserId,
+      created_by_user_name: d.createdByUserName,
+      reviewed_by_user_id: d.reviewedByUserId,
+      reviewed_by_user_name: d.reviewedByUserName,
+      approved_by_user_id: d.approvedByUserId,
+      approved_by_user_name: d.approvedByUserName,
+      reviewer_notes: d.reviewerNotes,
+      created_at: d.createdAt,
+      updated_at: d.updatedAt
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function updateDocumentStatusApi(id, status, actionByUserId, reviewerNotes = null) {
+  const payload = {
+    status: status,
+    actionByUserId: Number(actionByUserId || 1),
+    reviewerNotes: reviewerNotes
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`Failed to update status. Status: ${response.status}`);
+    const d = await response.json();
+    return {
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      content_html: d.contentHtml,
+      status: d.status,
+      created_by_user_id: d.createdByUserId,
+      created_by_user_name: d.createdByUserName,
+      reviewed_by_user_id: d.reviewedByUserId,
+      reviewed_by_user_name: d.reviewedByUserName,
+      approved_by_user_id: d.approvedByUserId,
+      approved_by_user_name: d.approvedByUserName,
+      reviewer_notes: d.reviewerNotes,
+      created_at: d.createdAt,
+      updated_at: d.updatedAt
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function deleteDocumentApi(id) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, { method: 'DELETE' });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+

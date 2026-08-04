@@ -18,6 +18,8 @@ namespace SystemConfigApi.Data
         public DbSet<Designation> Designations { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
 
+        public DbSet<Document> Documents { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -78,6 +80,23 @@ namespace SystemConfigApi.Data
                 new User { Id = 10, FullName = "Deepika Padukone", DepartmentId = 2, DesignationId = 4 },
                 new User { Id = 11, FullName = "Suresh Menon", DepartmentId = 3, DesignationId = 2 },
                 new User { Id = 12, FullName = "Neha Kapoor", DepartmentId = 1, DesignationId = 4 }
+            );
+
+            modelBuilder.Entity<Document>().HasData(
+                new Document
+                {
+                    Id = 1,
+                    Title = "Q3 Enterprise Information Security & Access Policy Audit",
+                    Category = "Audit & Compliance",
+                    ContentHtml = "<h1>Enterprise Information Security Audit</h1><p>Comprehensive review of group policies and individual access assignments across regional offices.</p><table><tr><th>Metric</th><th>Status</th></tr><tr><td>MFA Compliance</td><td>99.4%</td></tr><tr><td>DMS Access Control</td><td>Verified</td></tr></table>",
+                    Status = "Approved",
+                    CreatedByUserId = 1,
+                    ReviewedByUserId = 2,
+                    ApprovedByUserId = 8,
+                    ReviewerNotes = "Verified against Q3 compliance matrix. All criteria satisfied.",
+                    CreatedAt = new DateTime(2026, 7, 28, 10, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 7, 30, 15, 30, 0, DateTimeKind.Utc)
+                }
             );
 
         }

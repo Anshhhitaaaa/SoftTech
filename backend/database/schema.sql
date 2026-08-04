@@ -106,8 +106,24 @@ INSERT INTO users (id, full_name, department_id, designation_id) VALUES
 (12, 'Neha Kapoor', 1, 4)
 ON CONFLICT (id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS documents (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(300) NOT NULL,
+    category VARCHAR(150) NOT NULL DEFAULT 'Audit & Compliance Report',
+    content_html TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('Draft', 'Pending Review', 'Pending Approval', 'Approved')),
+    created_by_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reviewed_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    approved_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    reviewer_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 SELECT setval('office_categories_id_seq', (SELECT MAX(id) FROM office_categories));
 SELECT setval('offices_id_seq', (SELECT MAX(id) FROM offices));
 SELECT setval('departments_id_seq', (SELECT MAX(id) FROM departments));
 SELECT setval('designations_id_seq', (SELECT MAX(id) FROM designations));
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('documents_id_seq', (SELECT COALESCE(MAX(id), 1) FROM documents));
+
