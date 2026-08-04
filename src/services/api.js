@@ -291,3 +291,14 @@ export async function deleteDocumentApi(id) {
   }
 }
 
+export async function fetchLookups() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/lookup/all`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+

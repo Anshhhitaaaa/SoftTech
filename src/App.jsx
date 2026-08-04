@@ -27,10 +27,11 @@ import {
   fetchDocuments,
   createDocumentApi,
   updateDocumentStatusApi,
-  deleteDocumentApi
+  deleteDocumentApi,
+  fetchLookups
 } from './services/api';
 
-const personas = [
+const defaultPersonas = [
   { id: 1, name: "Rahul Sharma", role: "Normal User", category: "Creator" },
   { id: 2, name: "Priya Patel", role: "Reviewer", category: "Reviewer" },
   { id: 8, name: "Kavita Singh", role: "Approver", category: "Approver" }
@@ -38,7 +39,8 @@ const personas = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access' | 'doc-editor' | 'documents-repo'
-  const [currentPersona, setCurrentPersona] = useState(personas[0]); // Default: Normal User
+  const [personas, setPersonas] = useState(defaultPersonas);
+  const [currentPersona, setCurrentPersona] = useState(defaultPersonas[0]); // Default: Normal User
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,32 +63,25 @@ export default function App() {
     const groups = await fetchUserGroups();
     const accesses = await fetchIndividualAccesses();
     const docs = await fetchDocuments();
+    const lookups = await fetchLookups();
 
     if (groups !== null) setUserGroups(groups);
     if (accesses !== null) setIndividualAccessList(accesses);
+    if (docs !== null) setDocuments(docs);
 
-    if (docs !== null) {
-      setDocuments(docs);
-    } else {
-      // Fallback initial sample document
-      setDocuments([
-        {
-          id: 1,
-          title: "Q3 Enterprise Information Security & Access Policy Audit",
-          category: "Audit & Compliance",
-          content_html: "<h1>Enterprise Information Security Audit</h1><p>Comprehensive review of group policies and individual access assignments across regional offices.</p><table><tr><th>Metric</th><th>Status</th></tr><tr><td>MFA Compliance</td><td>99.4%</td></tr><tr><td>DMS Access Control</td><td>Verified</td></tr></table>",
-          status: "Approved",
-          created_by_user_id: 1,
-          created_by_user_name: "Rahul Sharma",
-          reviewed_by_user_id: 2,
-          reviewed_by_user_name: "Priya Patel",
-          approved_by_user_id: 8,
-          approved_by_user_name: "Kavita Singh",
-          reviewer_notes: "Verified against Q3 compliance matrix. All criteria satisfied.",
-          created_at: "2026-07-28T10:00:00Z",
-          updated_at: "2026-07-30T15:30:00Z"
-        }
-      ]);
+    if (lookups && lookups.users && lookups.users.length >= 3) {
+      const dbUsers = lookups.users;
+      const u1 = dbUsers.find(u => u.id === 1) || dbUsers[0];
+      const u2 = dbUsers.find(u => u.id === 2) || dbUsers[1];
+      const u8 = dbUsers.find(u => u.id === 8) || dbUsers[2];
+
+      const dynamicPersonas = [
+        { id: u1.id, name: u1.fullName || u1.full_name, role: "Normal User", category: "Creator" },
+        { id: u2.id, name: u2.fullName || u2.full_name, role: "Reviewer", category: "Reviewer" },
+        { id: u8.id, name: u8.fullName || u8.full_name, role: "Approver", category: "Approver" }
+      ];
+      setPersonas(dynamicPersonas);
+      setCurrentPersona(dynamicPersonas[0]);
     }
 
     setIsLoading(false);

@@ -20,39 +20,9 @@ import {
 import { generateAndDownloadDocx } from '../services/DocxGenerator';
 
 export default function DocumentEditor({ currentPersona, onSubmitForReview, onSaveDraft }) {
-  const [title, setTitle] = useState("Enterprise Security & Group Policy Audit Report");
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Audit & Compliance");
-  const [contentHtml, setContentHtml] = useState(`<h1>1. Executive Summary</h1>
-<p>This audit evaluates system access policies, DMS document privileges, and workflow reviewer/approver roles across all regional offices.</p>
-
-<h2>2. Security Compliance Matrix</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Policy / Group</th>
-      <th>Office Category</th>
-      <th>DMS Access Level</th>
-      <th>Workflow Role</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Security Lead Policy</td>
-      <td>Corporate Office</td>
-      <td>full_control</td>
-      <td>Approver</td>
-    </tr>
-    <tr>
-      <td>Regional Reviewers</td>
-      <td>Zonal Office</td>
-      <td>read_only</td>
-      <td>Reviewer</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2>3. Key Audit Findings & Directives</h2>
-<p>Zero-trust enforcement is 100% active. All individual access overrides have been verified by legal & compliance.</p>`);
+  const [contentHtml, setContentHtml] = useState("");
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
