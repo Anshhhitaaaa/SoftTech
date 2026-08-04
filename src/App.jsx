@@ -41,6 +41,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access' | 'doc-editor' | 'documents-repo'
   const [personas, setPersonas] = useState(defaultPersonas);
   const [currentPersona, setCurrentPersona] = useState(defaultPersonas[0]); // Default: Normal User
+  const [allDbUsers, setAllDbUsers] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -69,19 +70,22 @@ export default function App() {
     if (accesses !== null) setIndividualAccessList(accesses);
     if (docs !== null) setDocuments(docs);
 
-    if (lookups && lookups.users && lookups.users.length >= 3) {
-      const dbUsers = lookups.users;
-      const u1 = dbUsers.find(u => u.id === 1) || dbUsers[0];
-      const u2 = dbUsers.find(u => u.id === 2) || dbUsers[1];
-      const u8 = dbUsers.find(u => u.id === 8) || dbUsers[2];
+    if (lookups && lookups.users) {
+      setAllDbUsers(lookups.users);
+      if (lookups.users.length >= 3) {
+        const dbUsers = lookups.users;
+        const u1 = dbUsers.find(u => u.id === 1) || dbUsers[0];
+        const u2 = dbUsers.find(u => u.id === 2) || dbUsers[1];
+        const u8 = dbUsers.find(u => u.id === 8) || dbUsers[2];
 
-      const dynamicPersonas = [
-        { id: u1.id, name: u1.fullName || u1.full_name, role: "Normal User", category: "Creator" },
-        { id: u2.id, name: u2.fullName || u2.full_name, role: "Reviewer", category: "Reviewer" },
-        { id: u8.id, name: u8.fullName || u8.full_name, role: "Approver", category: "Approver" }
-      ];
-      setPersonas(dynamicPersonas);
-      setCurrentPersona(dynamicPersonas[0]);
+        const dynamicPersonas = [
+          { id: u1.id, name: u1.fullName || u1.full_name, role: "Normal User", category: "Creator" },
+          { id: u2.id, name: u2.fullName || u2.full_name, role: "Reviewer", category: "Reviewer" },
+          { id: u8.id, name: u8.fullName || u8.full_name, role: "Approver", category: "Approver" }
+        ];
+        setPersonas(dynamicPersonas);
+        setCurrentPersona(dynamicPersonas[0]);
+      }
     }
 
     setIsLoading(false);
@@ -237,6 +241,15 @@ export default function App() {
         currentPersona={currentPersona}
         setCurrentPersona={setCurrentPersona}
         personas={personas}
+        allUsers={allDbUsers}
+        onSelectUserForPersona={(selectedUser) => {
+          setCurrentPersona({
+            id: selectedUser.id,
+            name: selectedUser.fullName || selectedUser.full_name,
+            role: currentPersona.role,
+            category: currentPersona.category
+          });
+        }}
       />
 
       {/* Role / Workflow Notification Banner if pending items exist */}

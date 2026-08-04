@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, UserCheck, Shield, FileText, FolderCheck, User, UserPlus, Award } from 'lucide-react';
+import { Users, UserCheck, Shield, FileText, FolderCheck, User, ChevronDown } from 'lucide-react';
 
 export default function HeaderTabNav({
   activeTab,
@@ -9,14 +9,16 @@ export default function HeaderTabNav({
   documentCount = 0,
   currentPersona,
   setCurrentPersona,
-  personas = []
+  personas = [],
+  allUsers = [],
+  onSelectUserForPersona
 }) {
   return (
     <header className="w-full bg-white border-b border-slate-200/80 shrink-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-3">
         
         {/* Top Header Bar with Logo and Role Switcher */}
-        <div className="pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100">
+        <div className="pb-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100">
           
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
@@ -31,18 +33,19 @@ export default function HeaderTabNav({
           </div>
 
           {/* Persona / User Category Switcher Bar */}
-          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-1.5 flex items-center space-x-2 shadow-2xs">
-            <span className="text-[11px] font-bold text-slate-400 px-2 uppercase tracking-wider flex items-center gap-1">
+          <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2 flex flex-wrap items-center gap-2 shadow-2xs">
+            <span className="text-[11px] font-bold text-slate-500 px-1 uppercase tracking-wider flex items-center gap-1">
               <User className="w-3.5 h-3.5 text-indigo-600" />
               <span>Active Persona:</span>
             </span>
 
+            {/* Persona Quick Buttons */}
             <div className="flex items-center space-x-1">
               {personas.map((p) => {
-                const isActive = currentPersona.id === p.id;
+                const isActive = currentPersona.id === p.id && currentPersona.role === p.role;
                 return (
                   <button
-                    key={p.id}
+                    key={`${p.id}-${p.role}`}
                     onClick={() => setCurrentPersona(p)}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                       isActive
@@ -61,6 +64,31 @@ export default function HeaderTabNav({
                 );
               })}
             </div>
+
+            {/* Dropdown to pick ANY User from Database */}
+            {allUsers && allUsers.length > 0 && (
+              <div className="relative border-l border-slate-200 pl-2 ml-1">
+                <select
+                  value={currentPersona.id}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value);
+                    const selectedUser = allUsers.find(u => u.id === selectedId);
+                    if (selectedUser && onSelectUserForPersona) {
+                      onSelectUserForPersona(selectedUser);
+                    }
+                  }}
+                  className="bg-white border border-slate-300 text-slate-700 text-xs font-bold py-1 px-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs cursor-pointer"
+                >
+                  <option value="" disabled>Select Any DB User...</option>
+                  {allUsers.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName || u.full_name} (#{u.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
           </div>
 
         </div>
