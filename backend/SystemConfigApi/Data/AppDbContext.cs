@@ -87,40 +87,25 @@ namespace SystemConfigApi.Data
                 {
                     Id = 1,
                     GroupName = "IT Audit & Security Group",
-                    OfficeCategoryId = 1,
-                    OfficeId = 1,
-                    DepartmentId = 1,
-                    DesignationId = 2,
                     DmsAccessLevel = "full_control",
                     WorkflowRole = "reviewer",
-                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
-                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new UserGroup
                 {
                     Id = 2,
                     GroupName = "Legal & Risk Approvers Group",
-                    OfficeCategoryId = 1,
-                    OfficeId = 1,
-                    DepartmentId = 4,
-                    DesignationId = 1,
                     DmsAccessLevel = "full_control",
                     WorkflowRole = "approver",
-                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
-                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new UserGroup
                 {
                     Id = 3,
                     GroupName = "HR Operations Policy Group",
-                    OfficeCategoryId = 1,
-                    OfficeId = 1,
-                    DepartmentId = 2,
-                    DesignationId = 4,
                     DmsAccessLevel = "read_only",
                     WorkflowRole = "normal_user",
-                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
-                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
                 }
             );
 
