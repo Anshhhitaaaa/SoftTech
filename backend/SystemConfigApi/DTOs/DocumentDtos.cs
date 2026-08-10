@@ -31,8 +31,17 @@ namespace SystemConfigApi.DTOs
 
     public class UpdateDocumentStatusDto
     {
-        public string Status { get; set; } = string.Empty; // "Pending Review" | "Pending Approval" | "Approved" | "Draft"
+        public string Status { get; set; } = string.Empty; // "Pending Review" | "Pending Approval" | "Approved" | "Draft" | "Returned to Author" | "Returned to Reviewer"
         public int ActionByUserId { get; set; }
         public string? ReviewerNotes { get; set; }
+    }
+
+    public class UpdateDocumentDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = "Audit & Compliance Report";
+        public string ContentHtml { get; set; } = string.Empty;
+        public bool SubmitForReview { get; set; } = true;
+        public int ActionByUserId { get; set; }
     }
 }

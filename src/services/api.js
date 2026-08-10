@@ -247,6 +247,43 @@ export async function createDocumentApi(docData) {
   }
 }
 
+export async function updateDocumentContentApi(id, docData) {
+  const payload = {
+    title: docData.title,
+    category: docData.category || "Audit & Compliance Report",
+    contentHtml: docData.content_html,
+    submitForReview: Boolean(docData.submit_for_review),
+    actionByUserId: Number(docData.action_by_user_id || 1)
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`Failed to update document content. Status: ${response.status}`);
+    const d = await response.json();
+    return {
+      id: d.id,
+      title: d.title,
+      category: d.category,
+      content_html: d.contentHtml,
+      status: d.status,
+      created_by_user_id: d.createdByUserId,
+      created_by_user_name: d.createdByUserName,
+      reviewed_by_user_id: d.reviewedByUserId,
+      reviewed_by_user_name: d.reviewedByUserName,
+      approved_by_user_id: d.approvedByUserId,
+      approved_by_user_name: d.approvedByUserName,
+      reviewer_notes: d.reviewerNotes,
+      created_at: d.createdAt,
+      updated_at: d.updatedAt
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
 export async function updateDocumentStatusApi(id, status, actionByUserId, reviewerNotes = null) {
   const payload = {
     status: status,

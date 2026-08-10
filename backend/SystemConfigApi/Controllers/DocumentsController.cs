@@ -139,6 +139,44 @@ namespace SystemConfigApi.Controllers
             }
         }
 
+        [HttpPut("{id}")]
+        public async Task<ActionResult<DocumentResponseDto>> UpdateDocument(int id, [FromBody] UpdateDocumentDto dto)
+        {
+            try
+            {
+                var doc = await _context.Documents.FindAsync(id);
+                if (doc == null)
+                {
+                    return NotFound(new { message = $"Document with ID {id} not found." });
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.Title))
+                {
+                    doc.Title = dto.Title;
+                }
+                if (!string.IsNullOrWhiteSpace(dto.Category))
+                {
+                    doc.Category = dto.Category;
+                }
+                if (dto.ContentHtml != null)
+                {
+                    doc.ContentHtml = dto.ContentHtml;
+                }
+
+                doc.Status = dto.SubmitForReview ? "Pending Review" : "Draft";
+                doc.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var result = await GetDocument(doc.Id);
+                return Ok(result.Value);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error updating document", details = ex.Message });
+            }
+        }
+
         [HttpPut("{id}/status")]
         public async Task<ActionResult<DocumentResponseDto>> UpdateDocumentStatus(int id, [FromBody] UpdateDocumentStatusDto dto)
         {
@@ -161,11 +199,11 @@ namespace SystemConfigApi.Controllers
                     doc.ReviewerNotes = dto.ReviewerNotes;
                 }
 
-                if (dto.Status == "Pending Approval")
+                if (dto.Status == "Pending Approval" || dto.Status == "Returned to Author")
                 {
                     doc.ReviewedByUserId = actionUserId;
                 }
-                else if (dto.Status == "Approved")
+                if (dto.Status == "Approved" || dto.Status == "Returned to Reviewer")
                 {
                     doc.ApprovedByUserId = actionUserId;
                 }

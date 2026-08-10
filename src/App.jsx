@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, User, Search, Plus, RefreshCw, FileText, Clock, AlertCircle } from 'lucide-react';
+import { Users, User, Search, Plus, RefreshCw, FileText, Clock, AlertCircle, RotateCcw } from 'lucide-react';
 import HeaderTabNav from './components/HeaderTabNav';
 import EmptyState from './components/EmptyState';
 import DataTable from './components/DataTable';
@@ -9,8 +9,10 @@ import MasterDetailModal from './components/MasterDetailModal';
 import DocumentEditor from './components/DocumentEditor';
 import WorkflowReviewModal from './components/WorkflowReviewModal';
 import DocumentsRepository from './components/DocumentsRepository';
+import LoginModal from './components/LoginModal';
 
 import {
+  users as mockUsersList,
   getOfficeCategoryName,
   getOfficeName,
   getDepartmentName,
@@ -26,23 +28,27 @@ import {
   deleteIndividualAccessApi,
   fetchDocuments,
   createDocumentApi,
+  updateDocumentContentApi,
   updateDocumentStatusApi,
   deleteDocumentApi,
   fetchLookups
 } from './services/api';
 
-const defaultPersonas = [
-  { id: 1, name: "Rahul Sharma", role: "Normal User", category: "Creator" },
-  { id: 2, name: "Priya Patel", role: "Reviewer", category: "Reviewer" },
-  { id: 8, name: "Kavita Singh", role: "Approver", category: "Approver" }
-];
+const defaultUser = { id: 1, name: "Rahul Sharma", role: "Normal User", department: "Information Technology", designation: "Senior Architect" };
+
+const fallbackUsersList = mockUsersList.map(u => ({
+  id: u.id,
+  fullName: u.full_name,
+  departmentName: getDepartmentName(u.department_id),
+  designationName: getDesignationName(u.designation_id)
+}));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access' | 'doc-editor' | 'documents-repo'
-  const [personas, setPersonas] = useState(defaultPersonas);
-  const [currentPersona, setCurrentPersona] = useState(defaultPersonas[0]); // Default: Normal User
-  const [allDbUsers, setAllDbUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(true); // Auto open login modal on launch
 
+  const [allDbUsers, setAllDbUsers] = useState(fallbackUsersList);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -59,6 +65,8 @@ export default function App() {
   const [selectedReviewDoc, setSelectedReviewDoc] = useState(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
+  const [editingDoc, setEditingDoc] = useState(null);
+
   const loadData = async () => {
     setIsLoading(true);
     const groups = await fetchUserGroups();
@@ -70,25 +78,17 @@ export default function App() {
     if (accesses !== null) setIndividualAccessList(accesses);
     if (docs !== null) setDocuments(docs);
 
-    if (lookups && lookups.users) {
+    if (lookups && lookups.users && lookups.users.length > 0) {
       setAllDbUsers(lookups.users);
-      if (lookups.users.length >= 3) {
-        const dbUsers = lookups.users;
-        const u1 = dbUsers.find(u => u.id === 1) || dbUsers[0];
-        const u2 = dbUsers.find(u => u.id === 2) || dbUsers[1];
-        const u8 = dbUsers.find(u => u.id === 8) || dbUsers[2];
-
-        const dynamicPersonas = [
-          { id: u1.id, name: u1.fullName || u1.full_name, role: "Normal User", category: "Creator" },
-          { id: u2.id, name: u2.fullName || u2.full_name, role: "Reviewer", category: "Reviewer" },
-          { id: u8.id, name: u8.fullName || u8.full_name, role: "Approver", category: "Approver" }
-        ];
-        setPersonas(dynamicPersonas);
-        setCurrentPersona(dynamicPersonas[0]);
-      }
+    } else {
+      setAllDbUsers(fallbackUsersList);
     }
 
     setIsLoading(false);
+  };
+
+  const handleSignUpUser = (newUserObj) => {
+    setAllDbUsers(prev => [newUserObj, ...prev]);
   };
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function App() {
     setIndividualAccessList(individualAccessList.filter(i => i.id !== id));
   };
 
-  // Document Automation & Workflow Handlers
+  // Document Workflow Handlers
   const handleCreateDocument = async (docRecord) => {
     const savedDoc = await createDocumentApi(docRecord);
     const newDocObj = savedDoc || {
@@ -132,18 +132,40 @@ export default function App() {
       category: docRecord.category,
       content_html: docRecord.content_html,
       status: docRecord.submit_for_review ? 'Pending Review' : 'Draft',
-      created_by_user_id: currentPersona.id,
-      created_by_user_name: currentPersona.name,
+      created_by_user_id: currentUser?.id || 1,
+      created_by_user_name: currentUser?.name || "Author",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     setDocuments([newDocObj, ...documents]);
 
-    // If submitted for review, switch tab to notify or open review queue
     if (docRecord.submit_for_review) {
-      alert(`Report "${docRecord.title}" submitted to Reviewer (Priya Patel)! Current status: Pending Review.`);
+      alert(`Report "${docRecord.title}" submitted to Reviewer queue! Current status: Pending Review.`);
     }
+  };
+
+  const handleUpdateDocumentContent = async (id, docRecord) => {
+    const updatedDoc = await updateDocumentContentApi(id, docRecord);
+    if (updatedDoc) {
+      setDocuments(documents.map(d => d.id === id ? updatedDoc : d));
+    } else {
+      setDocuments(documents.map(d => {
+        if (d.id === id) {
+          return {
+            ...d,
+            title: docRecord.title,
+            category: docRecord.category,
+            content_html: docRecord.content_html,
+            status: docRecord.submit_for_review ? 'Pending Review' : 'Draft',
+            updated_at: new Date().toISOString()
+          };
+        }
+        return d;
+      }));
+    }
+    setEditingDoc(null);
+    alert(`Document #${id} updated and resubmitted to Reviewer queue!`);
   };
 
   const handleUpdateDocumentStatus = async (id, status, actionUserId, reviewerNotes) => {
@@ -157,8 +179,8 @@ export default function App() {
             ...d,
             status,
             reviewer_notes: reviewerNotes || d.reviewer_notes,
-            reviewed_by_user_name: status === 'Pending Approval' ? currentPersona.name : d.reviewed_by_user_name,
-            approved_by_user_name: status === 'Approved' ? currentPersona.name : d.approved_by_user_name,
+            reviewed_by_user_name: status === 'Pending Approval' ? (currentUser?.name || "Reviewer") : d.reviewed_by_user_name,
+            approved_by_user_name: status === 'Approved' ? (currentUser?.name || "Approver") : d.approved_by_user_name,
             updated_at: new Date().toISOString()
           };
         }
@@ -167,8 +189,12 @@ export default function App() {
     }
 
     if (status === 'Approved') {
-      alert(`Document finalized by Approver (${currentPersona.name})! It is now published and visible in the Documents menu.`);
+      alert(`Document finalized by Approver (${currentUser.name})! Published in Documents menu.`);
       setActiveTab('documents-repo');
+    } else if (status === 'Returned to Author') {
+      alert(`Document #${id} sent back to Author with comments.`);
+    } else if (status === 'Returned to Reviewer') {
+      alert(`Document #${id} sent back to Reviewer with comments.`);
     }
   };
 
@@ -187,7 +213,12 @@ export default function App() {
     setIsReviewModalOpen(true);
   };
 
-  // Universal Omni-Search Filters
+  const handleEditReturnedDoc = (doc) => {
+    setEditingDoc(doc);
+    setActiveTab('doc-editor');
+  };
+
+  // Search Filters
   const filteredGroups = userGroups.filter(g => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
@@ -215,8 +246,9 @@ export default function App() {
   });
 
   const approvedDocuments = documents.filter(d => d.status === 'Approved');
-  const pendingReviewDocs = documents.filter(d => d.status === 'Pending Review');
+  const pendingReviewDocs = documents.filter(d => d.status === 'Pending Review' || d.status === 'Returned to Reviewer');
   const pendingApprovalDocs = documents.filter(d => d.status === 'Pending Approval');
+  const returnedToAuthorDocs = documents.filter(d => d.status === 'Returned to Author');
 
   const filteredDocuments = approvedDocuments.filter(d => {
     if (!searchTerm.trim()) return true;
@@ -238,55 +270,62 @@ export default function App() {
         userGroupCount={userGroups.length}
         individualCount={individualAccessList.length}
         documentCount={approvedDocuments.length}
-        currentPersona={currentPersona}
-        setCurrentPersona={setCurrentPersona}
-        personas={personas}
-        allUsers={allDbUsers}
-        onSelectUserForPersona={(selectedUser) => {
-          setCurrentPersona({
-            id: selectedUser.id,
-            name: selectedUser.fullName || selectedUser.full_name,
-            role: currentPersona.role,
-            category: currentPersona.category
-          });
-        }}
+        currentUser={currentUser}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
       />
 
-      {/* Role / Workflow Notification Banner if pending items exist */}
-      {(pendingReviewDocs.length > 0 || pendingApprovalDocs.length > 0) && (
-        <div className="bg-gradient-to-r from-amber-500 via-indigo-600 to-violet-600 text-white text-xs px-4 py-2 flex items-center justify-between shadow-xs">
+      {/* Role-Based Workflow Banner */}
+      {currentUser?.role === 'Reviewer' && pendingReviewDocs.length > 0 && (
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs px-4 py-2 flex items-center justify-between shadow-xs animate-fadeIn">
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4 text-white shrink-0 animate-pulse" />
-            <span className="font-bold">Workflow Queue:</span>
-            {pendingReviewDocs.length > 0 && (
-              <span className="bg-white/20 px-2 py-0.5 rounded-full font-semibold">
-                {pendingReviewDocs.length} Pending Review (Reviewer Persona)
-              </span>
-            )}
-            {pendingApprovalDocs.length > 0 && (
-              <span className="bg-white/20 px-2 py-0.5 rounded-full font-semibold">
-                {pendingApprovalDocs.length} Pending Approval (Approver Persona)
-              </span>
-            )}
+            <span className="font-bold">Reviewer Queue:</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-full font-semibold">
+              {pendingReviewDocs.length} Document(s) Awaiting Review
+            </span>
           </div>
+          <button
+            onClick={() => handleInspectDocument(pendingReviewDocs[0])}
+            className="px-3 py-1 bg-white text-indigo-900 font-bold rounded-lg hover:bg-slate-100 transition-all text-xs cursor-pointer shadow-xs"
+          >
+            Inspect Document #{pendingReviewDocs[0].id}
+          </button>
+        </div>
+      )}
+
+      {currentUser?.role === 'Approver' && pendingApprovalDocs.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs px-4 py-2 flex items-center justify-between shadow-xs animate-fadeIn">
           <div className="flex items-center space-x-2">
-            {pendingReviewDocs.length > 0 && (
-              <button
-                onClick={() => handleInspectDocument(pendingReviewDocs[0])}
-                className="px-2.5 py-1 bg-white text-slate-900 font-bold rounded-lg hover:bg-slate-100 transition-all text-[11px] cursor-pointer"
-              >
-                Inspect Pending Review #{pendingReviewDocs[0].id}
-              </button>
-            )}
-            {pendingApprovalDocs.length > 0 && (
-              <button
-                onClick={() => handleInspectDocument(pendingApprovalDocs[0])}
-                className="px-2.5 py-1 bg-white text-slate-900 font-bold rounded-lg hover:bg-slate-100 transition-all text-[11px] cursor-pointer"
-              >
-                Inspect Pending Approval #{pendingApprovalDocs[0].id}
-              </button>
-            )}
+            <Clock className="w-4 h-4 text-white shrink-0 animate-pulse" />
+            <span className="font-bold">Approver Queue:</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-full font-semibold">
+              {pendingApprovalDocs.length} Document(s) Awaiting Final Approval
+            </span>
           </div>
+          <button
+            onClick={() => handleInspectDocument(pendingApprovalDocs[0])}
+            className="px-3 py-1 bg-white text-amber-900 font-bold rounded-lg hover:bg-slate-100 transition-all text-xs cursor-pointer shadow-xs"
+          >
+            Inspect Document #{pendingApprovalDocs[0].id}
+          </button>
+        </div>
+      )}
+
+      {currentUser?.role === 'Normal User' && returnedToAuthorDocs.length > 0 && (
+        <div className="bg-gradient-to-r from-rose-600 to-pink-600 text-white text-xs px-4 py-2 flex items-center justify-between shadow-xs animate-fadeIn">
+          <div className="flex items-center space-x-2">
+            <RotateCcw className="w-4 h-4 text-white shrink-0 animate-spin" />
+            <span className="font-bold">Returned Documents:</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-full font-semibold">
+              {returnedToAuthorDocs.length} Document(s) returned with feedback
+            </span>
+          </div>
+          <button
+            onClick={() => handleEditReturnedDoc(returnedToAuthorDocs[0])}
+            className="px-3 py-1 bg-white text-rose-900 font-bold rounded-lg hover:bg-slate-100 transition-all text-xs cursor-pointer shadow-xs"
+          >
+            Edit & Resubmit Doc #{returnedToAuthorDocs[0].id}
+          </button>
         </div>
       )}
 
@@ -368,9 +407,11 @@ export default function App() {
         {/* Tab 3: Word Document Automation Editor */}
         {isDocEditorTab && (
           <DocumentEditor
-            currentPersona={currentPersona}
+            currentPersona={currentUser}
             onSubmitForReview={handleCreateDocument}
-            onSaveDraft={handleCreateDocument}
+            onUpdateDocument={handleUpdateDocumentContent}
+            editingDoc={editingDoc}
+            onClearEditingDoc={() => setEditingDoc(null)}
           />
         )}
 
@@ -380,7 +421,7 @@ export default function App() {
             <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-bold text-slate-900">Published Documents Repository</h2>
-                <p className="text-xs text-slate-500">Official finalized Word documents (.docx) approved by reviewer & approver</p>
+                <p className="text-xs text-slate-500 font-medium">Official finalized Word documents (.docx) approved by reviewer & approver</p>
               </div>
 
               <div className="relative w-full sm:w-80">
@@ -406,6 +447,24 @@ export default function App() {
       </main>
 
       {/* Modals */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        allUsers={allDbUsers}
+        currentUser={currentUser}
+        onLoginSuccess={(loggedUser) => {
+          setCurrentUser(loggedUser);
+          if (loggedUser.role === 'Reviewer' && pendingReviewDocs.length > 0) {
+            handleInspectDocument(pendingReviewDocs[0]);
+          } else if (loggedUser.role === 'Approver' && pendingApprovalDocs.length > 0) {
+            handleInspectDocument(pendingApprovalDocs[0]);
+          }
+        }}
+        onSignUpUser={handleSignUpUser}
+        userGroups={userGroups}
+        individualAccesses={individualAccessList}
+      />
+
       <CreateGroupModal
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
@@ -429,7 +488,7 @@ export default function App() {
         doc={selectedReviewDoc}
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
-        currentPersona={currentPersona}
+        currentPersona={currentUser}
         onUpdateStatus={handleUpdateDocumentStatus}
       />
 

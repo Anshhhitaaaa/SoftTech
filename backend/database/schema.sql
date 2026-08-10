@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS documents (
     title VARCHAR(300) NOT NULL,
     category VARCHAR(150) NOT NULL DEFAULT 'Audit & Compliance Report',
     content_html TEXT NOT NULL,
-    status VARCHAR(50) NOT NULL CHECK (status IN ('Draft', 'Pending Review', 'Pending Approval', 'Approved')),
+    status VARCHAR(50) NOT NULL CHECK (status IN ('Draft', 'Pending Review', 'Pending Approval', 'Approved', 'Returned to Author', 'Returned to Reviewer')),
     created_by_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     reviewed_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,
     approved_by_user_id INT REFERENCES users(id) ON DELETE SET NULL,

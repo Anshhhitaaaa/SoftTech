@@ -23,7 +23,7 @@ namespace SystemConfigApi.Models
 
         [Required]
         [Column("status")]
-        public string Status { get; set; } = "Draft"; // Draft | Pending Review | Pending Approval | Approved
+        public string Status { get; set; } = "Draft"; // Draft | Pending Review | Pending Approval | Approved | Returned to Author | Returned to Reviewer
 
         [Column("created_by_user_id")]
         public int CreatedByUserId { get; set; }
