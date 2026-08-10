@@ -1,192 +1,188 @@
-# System Access, Group Policy & Word Document Automation System
+<div align="center">
 
-An enterprise-grade, full-stack security, document access management, and **Word Document (.docx) Automation & 3-Tier Approval Workflow** web application built with **React 18**, **ASP.NET Core 8 Web API**, **Entity Framework Core 8**, and **PostgreSQL**.
+# ⚡ Enterprise System Config & Word Document Automation Studio
+
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.0-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Build Status](https://img.shields.io/badge/Build-Passing-2EA44F?style=for-the-badge&logo=github-actions&logoColor=white)](#)
+
+<p align="center">
+  <b>A state-of-the-art full-stack platform featuring Role-Based Database Authentication, User Sign-Up Registration, Multi-Tier Review/Approval State Machine with Mandatory Send-Back Feedback, and Native Browser (.docx) Binary Generation.</b>
+</p>
+
+[Key Features](#-key-features) • [Workflow Architecture](#-multi-tier-workflow-state-machine) • [API Specs](#-restful-api-endpoints) • [Quickstart](#-quickstart--getting-started) • [Tech Stack](#-technology-stack)
 
 ---
 
-## 🌟 Architecture & Workflow Overview
+</div>
+
+## 📖 Short Description
+
+> **System Access, Group Policy & Word Document Automation Studio** is an enterprise-grade web application built using **React 18**, **ASP.NET Core 8 Web API**, **Entity Framework Core 8**, and **PostgreSQL**. It empowers organizations to manage granular office access policies while offering a complete document automation studio where users compose rich reports, trigger automated multi-tier review & approval workflows with feedback loops, and export native **Microsoft Word (.docx)** files directly from the browser.
+
+---
+
+## 🔥 Key Features
+
+> [!TIP]
+> **Dynamic Role Authentication**: Log in as any database user or register new accounts on the fly!
+
+- 👤 **Role-Based Authentication & User Sign-Up**:
+  - Interactive login modal with dynamic database user retrieval.
+  - **User Registration (Sign-Up)**: Create new user accounts specifying Full Name, Department, Designation, and primary Workflow Role (**Normal User**, **Reviewer**, **Approver**).
+  - Initials-based circular avatar rendering and clean sequential user IDs (`#13`, `#14`, etc.).
+
+- 🔄 **Multi-Tier Review & Approval State Machine**:
+  - **Normal User (Author)**: Composes formatted reports, submits to Reviewer (`Pending Review`), and receives notifications if documents are returned (`Returned to Author`) with mandatory rejection feedback.
+  - **Reviewer**: Inspects submitted reports $\rightarrow$ **Approve & Forward to Approver** (`Pending Approval`) OR **Send Back to Author** (`Returned to Author`) with mandatory reason comments.
+  - **Approver**: Inspects `Pending Approval` reports $\rightarrow$ **Approve & Publish** (`Approved`) OR **Send Back to Reviewer** (`Returned to Reviewer`) OR **Send Back to Author** (`Returned to Author`) with mandatory reason comments.
+
+- 📄 **Native Word (.docx) Packer Engine**:
+  - In-browser binary generation using `docx` (`Packer.toBlob`) and `file-saver`.
+  - Formatted Headings (Title, H1, H2, H3), styled data tables, callout boxes with indigo accents, headers & footers with disclaimers, and sign-off blocks.
+
+- 🛡️ **Granular Policy & Access Management**:
+  - User Group policies (`full_control`, `read_only`) categorized across Corporate, Zonal, Regional, Branch, and Site offices.
+  - Individual access override records for direct user privilege management.
+
+---
+
+## 🔄 Multi-Tier Workflow State Machine
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 React 18 Frontend Application                               │
-│  - DocumentEditor.jsx: Rich Text Report Builder, Toolbar & Sample Audit Template Generator │
-│  - DocxGenerator.js: Browser-side Native Word (.docx) Binary Packer (headings, tables, etc.)│
-│  - WorkflowReviewModal.jsx: Reviewer & Approver Stage Inspection & Notes                     │
-│  - DocumentsRepository.jsx: Published Documents Menu & Download Manager                     │
-│  - HeaderTabNav.jsx: Active Persona Switcher (Normal User ➔ Reviewer ➔ Approver)            │
-└───────────────────────────────┬─────────────────────────────────────────────────────────────┘
-                                │ HTTP / REST API (JSON)
-                                ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                ASP.NET Core 8 Web API Backend                               │
-│  - Controllers: DocumentsController, UserGroupsController, IndividualAccessController        │
-│  - DTOs: DocumentDtos, UserGroupDtos, IndividualAccessDtos                                  │
-│  - Data Access: AppDbContext (EF Core 8 with Npgsql & InMemory providers)                   │
-│  - Models: Document, UserGroup, GroupMember, IndividualAccess, User, Office, etc.           │
-└───────────────────────────────┬─────────────────────────────────────────────────────────────┘
-                                │ Entity Framework Core SQL Queries
-                                ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  PostgreSQL Relational DB                                   │
-│  - documents: Stores document drafts, content HTML, reviewer notes & approval status         │
-│  - user_groups & group_members: Policy definitions & junction member mappings                │
-│  - individual_access: Direct privilege override records                                      │
-│  - Lookup Tables: office_categories, offices, departments, designations, users              │
-└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                                 ┌──────────────────────┐
+                                 │   Document Creation  │
+                                 └──────────┬───────────┘
+                                            │ Submit for Review
+                                            ▼
+                                 ┌──────────────────────┐
+                                 │    Pending Review    │
+                                 │  (Reviewer Stage)    │
+                                 └──────────┬───────────┘
+                                   │        │
+                   Send Back       │        │ Approve & Forward
+            ┌──────────────────────┘        ▼
+            │                    ┌──────────────────────┐
+            │                    │   Pending Approval   │
+            │                    │   (Approver Stage)   │
+            │                    └──────────┬───────────┘
+            │                      │        │
+            │      Send to Reviewer│        │ Approve & Publish
+            │     ┌────────────────┘        ▼
+            ▼     ▼                      ┌──────────────────────┐
+    ┌────────────────┐                   │   Approved & Published│
+    │Returned Author │                   │ (Documents Repository)│
+    └───────┬────────┘                   └──────────────────────┘
+            │ Resubmit
+            └───────────────────────────────┘
 ```
 
----
-
-## 📝 Word Document (.docx) Automation & 3-Tier Approval Workflow
-
-### 1. User Categories / Personas
-The system implements a 3-tier role-based state machine. A persona switcher is provided in the header:
-1. **Normal User (Creator - Rahul Sharma)**: Composes formatted reports in the editor, loads templates, previews `.docx` formatting, and submits to Reviewer.
-2. **Reviewer (Priya Patel)**: Inspects submitted reports (`Pending Review`), adds review feedback notes, and forwards to Approver.
-3. **Approver (Kavita Singh)**: Performs final verification on `Pending Approval` reports and clicks **Finalize & Publish**.
-
-### 2. Word Document (.docx) Generation & Formatting Fidelity
-Built using the `docx` library (`Packer.toBlob`) and `file-saver`:
-- **Headings**: Formatted Title, H1, H2, H3 with custom font sizes and indigo branding palette (`1E1B4B`, `312E81`).
-- **Tables**: Styled data tables with shaded headers, borders, cell margins, and custom text colors.
-- **Callout Boxes**: Shaded indigo note boxes with left accent borders for audit directives.
-- **Headers & Footers**: Automatic headers with category names and footers with confidentiality disclaimers & page numbers.
-- **Page Breaks**: Explicit section page breaks preceding sign-off blocks.
-
-### 3. Published Documents Repository Menu
-Once an Approver finalizes a document:
-- Status transitions to `Approved`.
-- The document immediately publishes to the **Documents Menu** tab.
-- Users can view approval signatures (Author, Reviewer, Approver) and click **Download .docx File** to obtain a formatted Microsoft Word document.
+| User Role | Accessible Queue | Available Workflow Actions |
+| :--- | :--- | :--- |
+| 🧑‍💻 **Normal User** | Drafts & Returned Documents | Create reports, view return comments, edit content, & resubmit for review (`Pending Review`). |
+| 🔎 **Reviewer** | Review Queue (`Pending Review`) | Approve & Forward to Approver (`Pending Approval`) OR Send Back to Author (`Returned to Author`) with mandatory comment. |
+| 👑 **Approver** | Approval Queue (`Pending Approval`) | Approve & Publish (`Approved`) OR Send Back to Reviewer (`Returned to Reviewer`) OR Send Back to Author (`Returned to Author`) with mandatory comment. |
 
 ---
 
-## 📁 Exhaustive File-by-File Repository Index
-
-This codebase contains **38+ source files**:
+## 📁 Repository Structure
 
 ```text
 App_1/
-├── .github/
-│   └── workflows/
-│       └── ci-cd.yml                   # GitHub Actions pipeline for build, test, and SonarQube quality analysis
 ├── backend/
 │   ├── database/
-│   │   └── schema.sql                  # PostgreSQL DDL script for user_groups, individual_access, and documents
+│   │   └── schema.sql                  # PostgreSQL DDL script with workflow check constraints
 │   ├── SystemConfigApi/
 │   │   ├── Controllers/
-│   │   │   ├── DocumentsController.cs        # REST API endpoints for document CRUD & status workflow transitions
-│   │   │   ├── IndividualAccessController.cs # REST API endpoints for individual privilege overrides
-│   │   │   ├── LookupController.cs           # REST API endpoint for dropdown lookup datasets
+│   │   │   ├── DocumentsController.cs        # REST API endpoints for document CRUD & approval workflows
+│   │   │   ├── IndividualAccessController.cs # REST API endpoints for individual access overrides
+│   │   │   ├── LookupController.cs           # REST API endpoints for dropdown datasets
 │   │   │   └── UserGroupsController.cs       # REST API endpoints for user group policies
-│   │   ├── Data/
-│   │   │   └── AppDbContext.cs         # EF Core DbContext mapping DbSets, relationships & seed data
-│   │   ├── DTOs/
-│   │   │   ├── DocumentDtos.cs         # Data Transfer Objects for document creation & workflow status updates
-│   │   │   ├── IndividualAccessDtos.cs # Data Transfer Objects for individual access requests/responses
-│   │   │   └── UserGroupDtos.cs        # Data Transfer Objects for group policy & member assignments
-│   │   ├── Models/
-│   │   │   ├── Department.cs           # Entity model for organization departments
-│   │   │   ├── Designation.cs          # Entity model for job designations
-│   │   │   ├── Document.cs             # Entity model for document reports & approval statuses
-│   │   │   ├── GroupMember.cs          # Entity model mapping users to group policies
-│   │   │   ├── IndividualAccess.cs     # Entity model for direct user privilege overrides
-│   │   │   ├── Office.cs               # Entity model for regional/corporate offices
-│   │   │   ├── OfficeCategory.cs       # Entity model for office classification levels
-│   │   │   ├── User.cs                 # Entity model for system users
-│   │   │   └── UserGroup.cs            # Entity model for group policies
-│   │   ├── appsettings.json            # ASP.NET Core application settings & connection strings
-│   │   ├── Program.cs                  # Backend entrypoint configuring CORS, Swagger, EF Core & controllers
-│   │   └── SystemConfigApi.csproj      # .NET 8 project dependencies (EF Core, Npgsql, Swashbuckle)
-│   └── SystemConfigApi.Tests/
-│       ├── Controllers/
-│       │   ├── DocumentsControllerTests.cs        # xUnit tests for document CRUD & approval workflows
-│       │   ├── IndividualAccessControllerTests.cs # xUnit tests for individual access API logic
-│       │   └── UserGroupsControllerTests.cs       # xUnit tests for user group API CRUD operations
-│       └── SystemConfigApi.Tests.csproj # xUnit test project configuration with Moq & EF Core InMemory
+│   │   ├── Data/AppDbContext.cs              # Entity Framework Core DbContext
+│   │   ├── DTOs/DocumentDtos.cs              # DTOs for content updates & status transitions
+│   │   └── Models/Document.cs                # Document entity & workflow status model
+│   └── SystemConfigApi.Tests/                # xUnit unit test suite
 ├── src/
 │   ├── components/
-│   │   ├── AddIndividualAccessModal.jsx # Form modal for granting direct individual user privileges
-│   │   ├── CreateGroupModal.jsx         # Form modal for creating user group policies & member rules
-│   │   ├── DataTable.jsx                # Reusable data grid with status pills, actions & formatting
-│   │   ├── DocumentEditor.jsx           # Word Doc Automation Editor, formatting toolbar & sample template loader
-│   │   ├── DocumentsRepository.jsx      # Published Documents Menu displaying approved reports & .docx downloads
-│   │   ├── EmptyState.jsx               # Visual fallback UI displayed when lists are empty
-│   │   ├── HeaderTabNav.jsx             # App header with live tab counters & persona switcher bar
-│   │   ├── MasterDetailModal.jsx        # Detail modal for inspecting DB records, FKs & permissions
-│   │   └── WorkflowReviewModal.jsx      # Inspection & review modal for Reviewer & Approver stages
-│   ├── data/
-│   │   └── mockData.js                  # Pre-populated local dataset & lookup resolver helpers
+│   │   ├── AddIndividualAccessModal.jsx      # Modal for individual access overrides
+│   │   ├── CreateGroupModal.jsx              # Modal for group policy creation
+│   │   ├── DocumentEditor.jsx                # Word Doc Studio, toolbar & feedback banner
+│   │   ├── DocumentsRepository.jsx           # Published Documents Repository & downloader
+│   │   ├── HeaderTabNav.jsx                  # Header with user profile card & Sign In / Sign Up trigger
+│   │   ├── LoginModal.jsx                    # Database Role Authentication & User Sign-Up Modal
+│   │   ├── MasterDetailModal.jsx             # Detailed record inspector modal
+│   │   └── WorkflowReviewModal.jsx           # Multi-stage review inspection & send-back modal
+│   ├── data/mockData.js                      # Fallback user datasets & lookup helpers
 │   ├── services/
-│   │   ├── api.js                       # Axios/Fetch REST service layer for user groups, access, & documents
-│   │   └── DocxGenerator.js             # Word .docx binary generation engine using docx and file-saver
-│   ├── App.jsx                          # Main React state container, persona switcher & tab router
-│   ├── index.css                        # Tailwind CSS imports & custom animation/scrollbar styles
-│   └── main.jsx                         # React 18 DOM root entrypoint
-├── tests/
-│   └── e2e/
-│       ├── individual-access.spec.js    # Playwright E2E browser tests for individual access management
-│       └── user-groups.spec.js           # Playwright E2E browser tests for group policy workflows
-├── Dockerfile                           # Multi-stage container build definition (.NET 8 SDK + ASP.NET runtime)
-├── package.json                         # Dependencies (React 18, Vite 5, docx, file-saver, Lucide, Playwright)
-├── playwright.config.js                 # Playwright E2E runner configuration & dev server launcher
-├── postcss.config.js                    # PostCSS pipeline configuration (Tailwind & Autoprefixer)
-├── sonar-project.properties             # SonarQube code quality scanner rules & path exclusions
-├── tailwind.config.js                   # Tailwind CSS theme extension & content path setup
-└── vite.config.js                       # Vite bundler setup & development server options
+│   │   ├── api.js                            # Fetch API service layer
+│   │   └── DocxGenerator.js                  # Native browser .docx binary packer
+│   └── App.jsx                               # Main application container & state router
 ```
 
 ---
 
-## 🔌 RESTful API Endpoint Reference
+## 🔌 RESTful API Endpoints
 
-| Method | Endpoint | Description | Request Body | Response |
+| Method | Endpoint | Description | Request Body | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **GET** | `/api/documents` | Retrieve all documents (optional `?status=` filter) | N/A | `200 OK` (Array of `DocumentResponseDto`) |
-| **GET** | `/api/documents/{id}` | Retrieve single document by ID | N/A | `200 OK` / `404 Not Found` |
+| **GET** | `/api/documents` | Retrieve all documents (optional `?status=` filter) | N/A | `200 OK` |
+| **GET** | `/api/documents/{id}` | Retrieve document details by ID | N/A | `200 OK` |
 | **POST** | `/api/documents` | Create new document report or submit for review | `CreateDocumentDto` | `201 Created` |
-| **PUT** | `/api/documents/{id}/status` | Update document workflow status (Reviewer/Approver) | `UpdateDocumentStatusDto` | `200 OK` |
+| **PUT** | `/api/documents/{id}` | Update document content & resubmit returned document | `UpdateDocumentDto` | `200 OK` |
+| **PUT** | `/api/documents/{id}/status` | Update document workflow status & feedback notes | `UpdateDocumentStatusDto` | `200 OK` |
 | **DELETE** | `/api/documents/{id}` | Delete a document report | N/A | `204 No Content` |
-| **GET** | `/api/usergroups` | Retrieve all user groups with nested members | N/A | `200 OK` |
-| **GET** | `/api/individualaccess` | Retrieve all individual access privileges | N/A | `200 OK` |
-| **GET** | `/api/lookup/all` | Fetch all lookup dropdown datasets | N/A | `200 OK` |
+| **GET** | `/api/lookup/all` | Fetch all user dropdown lookups | N/A | `200 OK` |
 
 ---
 
-## 🚀 Quickstart & Local Setup Guide
+## 🚀 Quickstart & Getting Started
 
-### 1. Install Dependencies
+> [!IMPORTANT]
+> Make sure **Node.js 18+** and **.NET 8 SDK** are installed on your machine.
+
+### 1. Frontend Setup
 ```bash
-npm install
-```
+# Clone the repository
+git clone https://github.com/Anshhhitaaaa/SoftTech.git
+cd SoftTech
 
-### 2. Run Backend API
+# Install dependencies
+npm install
+
+# Start Vite React development server
+npm run dev
+```
+Open **`http://localhost:5173`** in your browser.
+
+### 2. Backend Setup (.NET 8 Web API)
 ```bash
 cd backend/SystemConfigApi
+
+# Restore dependencies & run backend API
 dotnet restore
 dotnet run
 ```
-- API Base URL: `http://localhost:5000`
-- Interactive Swagger Documentation: `http://localhost:5000/swagger`
-
-### 3. Run React App
-In a new terminal window at the workspace root:
-```bash
-npm run dev
-```
-- Open browser at `http://localhost:5173`.
+Backend API will launch on **`http://localhost:5000`** with Swagger UI available at **`http://localhost:5000/swagger`**.
 
 ---
 
-## 🧪 Automated Testing
+## 🛠️ Technology Stack
 
-### Backend Unit Tests (xUnit)
-```bash
-cd backend/SystemConfigApi.Tests
-dotnet test
-```
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend Framework** | React 18 + Vite 5 | Fast component-driven single page application |
+| **Styling** | Tailwind CSS 3.4 | Modern utility-first responsive styling & custom dark themes |
+| **Icons & UI** | Lucide React | Clean, modern vector icon set |
+| **Doc Packer** | `docx` + `file-saver` | Browser-side Microsoft Word binary document compiler |
+| **Backend API** | ASP.NET Core 8 Web API | High-performance C# RESTful backend API |
+| **ORM / Data Access** | Entity Framework Core 8 | Object-relational mapping with PostgreSQL Npgsql provider |
+| **Database** | PostgreSQL 16 | Relational database engine |
 
-### End-to-End Tests (Playwright)
-```bash
-npx playwright test
-```
+---
+
+<div align="center">
+  <sub>Built with ❤️ by Google DeepMind Antigravity Pair Programming</sub>
+</div>
