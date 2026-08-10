@@ -84,10 +84,9 @@ namespace SystemConfigApi.Controllers
                     OfficeId = 1,
                     DepartmentId = dept.Id,
                     DesignationId = desig.Id,
-                    AccessLevel = "full_control",
+                    DmsAccessLevel = "full_control",
                     WorkflowRole = roleLower,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow
                 };
                 _context.IndividualAccesses.Add(access);
                 await _context.SaveChangesAsync();
