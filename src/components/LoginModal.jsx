@@ -224,7 +224,13 @@ export default function LoginModal({
                       <button
                         key={user.id}
                         type="button"
-                        onClick={() => setSelectedUserId(user.id)}
+                        onClick={() => {
+                          setSelectedUserId(user.id);
+                          const userRoles = getAssignedRolesForUser(user.id);
+                          if (!userRoles.includes(selectedRole) && selectedRole !== "Normal User") {
+                            setSelectedRole(userRoles.includes("Approver") ? "Approver" : userRoles.includes("Reviewer") ? "Reviewer" : "Normal User");
+                          }
+                        }}
                         className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
                           isSelected
                             ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200 scale-[1.01]'
@@ -301,6 +307,7 @@ export default function LoginModal({
                     icon: Award
                   }
                 ].map(r => {
+                  const isAssignedInDb = (r.role === "Normal User") || detectedRoles.includes(r.role);
                   const isSelectedRole = selectedRole === r.role;
                   const IconComponent = r.icon;
 
@@ -308,35 +315,53 @@ export default function LoginModal({
                     <button
                       key={r.role}
                       type="button"
-                      onClick={() => setSelectedRole(r.role)}
-                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
-                        isSelectedRole
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20 scale-[1.02]'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-white hover:border-slate-300'
+                      disabled={!isAssignedInDb}
+                      onClick={() => {
+                        if (isAssignedInDb) setSelectedRole(r.role);
+                      }}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between ${
+                        !isAssignedInDb
+                          ? 'bg-slate-100/70 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                          : isSelectedRole
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20 scale-[1.02] cursor-pointer'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-white hover:border-slate-300 cursor-pointer'
                       }`}
                     >
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <div className={`p-1.5 rounded-lg ${
-                            isSelectedRole ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-600'
+                            !isAssignedInDb
+                              ? 'bg-slate-200 text-slate-400'
+                              : isSelectedRole
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-slate-200 text-slate-600'
                           }`}>
                             <IconComponent className="w-4 h-4" />
                           </div>
                           {isSelectedRole && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                          {!isAssignedInDb && <Shield className="w-3.5 h-3.5 text-slate-400" />}
                         </div>
                         <div className="font-bold text-xs tracking-tight">{r.title}</div>
                         <p className={`text-[10px] leading-tight mt-1 ${
-                          isSelectedRole ? 'text-slate-300' : 'text-slate-400'
+                          !isAssignedInDb
+                            ? 'text-slate-400'
+                            : isSelectedRole
+                            ? 'text-slate-300'
+                            : 'text-slate-400'
                         }`}>
-                          {r.desc}
+                          {isAssignedInDb ? r.desc : "Requires DB Access Assignment"}
                         </p>
                       </div>
 
-                      {detectedRoles.includes(r.role) && (
+                      {isAssignedInDb ? (
                         <span className={`inline-block text-[9px] font-extrabold uppercase mt-3 px-1.5 py-0.5 rounded-md ${
                           isSelectedRole ? 'bg-indigo-600/40 text-indigo-200' : 'bg-emerald-100 text-emerald-800'
                         }`}>
-                          ✓ DB Assigned
+                          ✓ Authorized
+                        </span>
+                      ) : (
+                        <span className="inline-block text-[9px] font-bold uppercase mt-3 px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-500">
+                          🔒 No DB Access
                         </span>
                       )}
                     </button>
