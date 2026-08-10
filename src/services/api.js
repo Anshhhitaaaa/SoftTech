@@ -338,4 +338,34 @@ export async function fetchLookups() {
   }
 }
 
+export async function createUserApi(userData) {
+  const payload = {
+    fullName: userData.fullName || userData.full_name,
+    departmentName: userData.departmentName || userData.department_name || "Information Technology",
+    designationName: userData.designationName || userData.designation_name || "Senior Specialist",
+    role: userData.role || "Normal User"
+  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`Failed to create user. Status: ${response.status}`);
+    const u = await response.json();
+    return {
+      id: u.id,
+      fullName: u.fullName,
+      full_name: u.fullName,
+      departmentName: u.departmentName,
+      department_name: u.departmentName,
+      designationName: u.designationName,
+      designation_name: u.designationName,
+      role: u.role
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
 

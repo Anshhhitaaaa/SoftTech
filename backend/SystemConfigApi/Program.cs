@@ -28,6 +28,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     {
         options.UseNpgsql(connectionString);
     }
+    else
+    {
+        options.UseInMemoryDatabase("SystemConfigDb");
+    }
 });
 
 var app = builder.Build();

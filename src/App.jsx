@@ -31,7 +31,8 @@ import {
   updateDocumentContentApi,
   updateDocumentStatusApi,
   deleteDocumentApi,
-  fetchLookups
+  fetchLookups,
+  createUserApi
 } from './services/api';
 
 const defaultUser = { id: 1, name: "Rahul Sharma", role: "Normal User", department: "Information Technology", designation: "Senior Architect" };
@@ -76,24 +77,88 @@ export default function App() {
 
     if (groups !== null) setUserGroups(groups);
     if (accesses !== null) setIndividualAccessList(accesses);
-    if (docs !== null) setDocuments(docs);
 
-    if (lookups && lookups.users && lookups.users.length > 0) {
-      setAllDbUsers(lookups.users);
+    let finalDocs = [];
+    if (docs && docs.length > 0) {
+      finalDocs = docs;
     } else {
-      setAllDbUsers(fallbackUsersList);
+      const localSaved = localStorage.getItem('softtech_documents');
+      if (localSaved) {
+        try {
+          finalDocs = JSON.parse(localSaved);
+        } catch {
+          finalDocs = [];
+        }
+      }
     }
+
+    if (finalDocs.length === 0) {
+      finalDocs = [
+        {
+          id: 1,
+          title: "Q3 Enterprise Information Security & Access Policy Audit",
+          category: "Audit & Compliance",
+          content_html: "<h1>Enterprise Information Security Audit</h1><p>Comprehensive review of group policies and individual access assignments across regional offices.</p>",
+          status: "Approved",
+          created_by_user_id: 1,
+          created_by_user_name: "Rahul Sharma",
+          reviewed_by_user_id: 2,
+          reviewed_by_user_name: "Priya Patel",
+          approved_by_user_id: 8,
+          approved_by_user_name: "Kavita Singh",
+          reviewer_notes: "Verified against Q3 compliance matrix. All criteria satisfied.",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+    }
+
+    setDocuments(finalDocs);
+    localStorage.setItem('softtech_documents', JSON.stringify(finalDocs));
+
+    let dbUsers = (lookups && lookups.users && lookups.users.length > 0) ? lookups.users : fallbackUsersList;
+    const localUsers = localStorage.getItem('softtech_users');
+    if (localUsers) {
+      try {
+        const parsed = JSON.parse(localUsers);
+        if (Array.isArray(parsed)) {
+          // Merge local users without duplicating IDs
+          const existingIds = new Set(dbUsers.map(u => u.id));
+          const extraUsers = parsed.filter(u => !existingIds.has(u.id));
+          dbUsers = [...extraUsers, ...dbUsers];
+        }
+      } catch {
+        // ignore
+      }
+    }
+    setAllDbUsers(dbUsers);
 
     setIsLoading(false);
   };
 
-  const handleSignUpUser = (newUserObj) => {
-    setAllDbUsers(prev => [newUserObj, ...prev]);
+  const handleSignUpUser = async (newUserObj) => {
+    // 1. Send to Backend DB API
+    const savedUser = await createUserApi(newUserObj);
+    const userToSave = savedUser || newUserObj;
+
+    // 2. Update React State
+    setAllDbUsers(prev => {
+      const updated = [userToSave, ...prev.filter(u => u.id !== userToSave.id)];
+      localStorage.setItem('softtech_users', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Save documents to localStorage whenever documents state updates
+  useEffect(() => {
+    if (documents && documents.length > 0) {
+      localStorage.setItem('softtech_documents', JSON.stringify(documents));
+    }
+  }, [documents]);
 
   const handleCreateGroup = async (newGroupData) => {
     const savedGroup = await createUserGroupApi(newGroupData);
