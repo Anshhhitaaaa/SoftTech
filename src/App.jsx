@@ -75,8 +75,25 @@ export default function App() {
     const docs = await fetchDocuments();
     const lookups = await fetchLookups();
 
-    if (groups !== null) setUserGroups(groups);
-    if (accesses !== null) setIndividualAccessList(accesses);
+    if (groups && groups.length > 0) {
+      setUserGroups(groups);
+      localStorage.setItem('softtech_user_groups', JSON.stringify(groups));
+    } else {
+      const localG = localStorage.getItem('softtech_user_groups');
+      if (localG) {
+        try { setUserGroups(JSON.parse(localG)); } catch {}
+      }
+    }
+
+    if (accesses && accesses.length > 0) {
+      setIndividualAccessList(accesses);
+      localStorage.setItem('softtech_individual_access', JSON.stringify(accesses));
+    } else {
+      const localA = localStorage.getItem('softtech_individual_access');
+      if (localA) {
+        try { setIndividualAccessList(JSON.parse(localA)); } catch {}
+      }
+    }
 
     let finalDocs = [];
     if (docs && docs.length > 0) {
@@ -162,30 +179,32 @@ export default function App() {
 
   const handleCreateGroup = async (newGroupData) => {
     const savedGroup = await createUserGroupApi(newGroupData);
-    if (savedGroup) {
-      setUserGroups([savedGroup, ...userGroups]);
-    } else {
-      setUserGroups([newGroupData, ...userGroups]);
-    }
+    const itemToSave = savedGroup || newGroupData;
+    const updated = [itemToSave, ...userGroups];
+    setUserGroups(updated);
+    localStorage.setItem('softtech_user_groups', JSON.stringify(updated));
   };
 
   const handleAddIndividualAccess = async (newAccessData) => {
     const savedAccess = await createIndividualAccessApi(newAccessData);
-    if (savedAccess) {
-      setIndividualAccessList([savedAccess, ...individualAccessList]);
-    } else {
-      setIndividualAccessList([newAccessData, ...individualAccessList]);
-    }
+    const itemToSave = savedAccess || newAccessData;
+    const updated = [itemToSave, ...individualAccessList];
+    setIndividualAccessList(updated);
+    localStorage.setItem('softtech_individual_access', JSON.stringify(updated));
   };
 
   const handleDeleteGroup = async (id) => {
     await deleteUserGroupApi(id);
-    setUserGroups(userGroups.filter(g => g.id !== id));
+    const updated = userGroups.filter(g => g.id !== id);
+    setUserGroups(updated);
+    localStorage.setItem('softtech_user_groups', JSON.stringify(updated));
   };
 
   const handleDeleteIndividual = async (id) => {
     await deleteIndividualAccessApi(id);
-    setIndividualAccessList(individualAccessList.filter(i => i.id !== id));
+    const updated = individualAccessList.filter(i => i.id !== id);
+    setIndividualAccessList(updated);
+    localStorage.setItem('softtech_individual_access', JSON.stringify(updated));
   };
 
   // Document Workflow Handlers

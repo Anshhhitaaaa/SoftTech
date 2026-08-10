@@ -82,6 +82,85 @@ namespace SystemConfigApi.Data
                 new User { Id = 12, FullName = "Neha Kapoor", DepartmentId = 1, DesignationId = 4 }
             );
 
+            modelBuilder.Entity<UserGroup>().HasData(
+                new UserGroup
+                {
+                    Id = 1,
+                    GroupName = "IT Audit & Security Group",
+                    OfficeCategoryId = 1,
+                    OfficeId = 1,
+                    DepartmentId = 1,
+                    DesignationId = 2,
+                    DmsAccessLevel = "full_control",
+                    WorkflowRole = "reviewer",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new UserGroup
+                {
+                    Id = 2,
+                    GroupName = "Legal & Risk Approvers Group",
+                    OfficeCategoryId = 1,
+                    OfficeId = 1,
+                    DepartmentId = 4,
+                    DesignationId = 1,
+                    DmsAccessLevel = "full_control",
+                    WorkflowRole = "approver",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new UserGroup
+                {
+                    Id = 3,
+                    GroupName = "HR Operations Policy Group",
+                    OfficeCategoryId = 1,
+                    OfficeId = 1,
+                    DepartmentId = 2,
+                    DesignationId = 4,
+                    DmsAccessLevel = "read_only",
+                    WorkflowRole = "normal_user",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            modelBuilder.Entity<GroupMember>().HasData(
+                new GroupMember { Id = 1, GroupId = 1, UserId = 1 },
+                new GroupMember { Id = 2, GroupId = 1, UserId = 2 },
+                new GroupMember { Id = 3, GroupId = 1, UserId = 5 },
+                new GroupMember { Id = 4, GroupId = 2, UserId = 8 },
+                new GroupMember { Id = 5, GroupId = 2, UserId = 3 },
+                new GroupMember { Id = 6, GroupId = 3, UserId = 6 },
+                new GroupMember { Id = 7, GroupId = 3, UserId = 7 }
+            );
+
+            modelBuilder.Entity<IndividualAccess>().HasData(
+                new IndividualAccess
+                {
+                    Id = 1,
+                    OfficeCategoryId = 1,
+                    OfficeId = 1,
+                    DepartmentId = 1,
+                    DesignationId = 2,
+                    TargetUserId = 2,
+                    DmsAccessLevel = "full_control",
+                    WorkflowRole = "reviewer",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new IndividualAccess
+                {
+                    Id = 2,
+                    OfficeCategoryId = 1,
+                    OfficeId = 1,
+                    DepartmentId = 4,
+                    DesignationId = 1,
+                    TargetUserId = 8,
+                    DmsAccessLevel = "full_control",
+                    WorkflowRole = "approver",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
             modelBuilder.Entity<Document>().HasData(
                 new Document
                 {
