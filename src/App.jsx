@@ -553,12 +553,14 @@ export default function App() {
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
         onSubmit={handleCreateGroup}
+        allUsers={allDbUsers}
       />
 
       <AddIndividualAccessModal
         isOpen={isIndividualModalOpen}
         onClose={() => setIsIndividualModalOpen(false)}
         onSubmit={handleAddIndividualAccess}
+        allUsers={allDbUsers}
       />
 
       <MasterDetailModal

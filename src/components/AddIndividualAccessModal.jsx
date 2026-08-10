@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, ChevronDown, UserPlus, FileEdit, Eye, CheckSquare, Award, Building, User } from 'lucide-react';
 import { officeCategories, offices, departments, designations, users, getDepartmentName, getDesignationName } from '../data/mockData';
 
-export default function AddIndividualAccessModal({ isOpen, onClose, onSubmit }) {
+export default function AddIndividualAccessModal({ isOpen, onClose, onSubmit, allUsers = [] }) {
   const [officeCategoryId, setOfficeCategoryId] = useState('');
   const [officeId, setOfficeId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
@@ -14,30 +14,30 @@ export default function AddIndividualAccessModal({ isOpen, onClose, onSubmit }) 
 
   if (!isOpen) return null;
 
+  const usersToDisplay = (allUsers && allUsers.length > 0) ? allUsers : users;
+
   // Filter offices by selected office category
   const filteredOffices = officeCategoryId
     ? offices.filter(o => o.office_category_id === Number(officeCategoryId))
     : offices;
 
   // Filter users by selected department/designation
-  const strictUsers = users.filter(u => {
-    if (departmentId && u.department_id !== Number(departmentId)) return false;
-    if (designationId && u.designation_id !== Number(designationId)) return false;
+  const strictUsers = usersToDisplay.filter(u => {
+    if (departmentId && u.department_id && u.department_id !== Number(departmentId)) return false;
+    if (designationId && u.designation_id && u.designation_id !== Number(designationId)) return false;
     return true;
   });
 
   const filteredUsers = strictUsers.length > 0
     ? strictUsers
-    : (departmentId || designationId
-        ? users.filter(u => (departmentId && u.department_id === Number(departmentId)) || (designationId && u.designation_id === Number(designationId)))
-        : users);
+    : usersToDisplay;
 
 
   const handleAdd = (e) => {
     e.preventDefault();
     if (!targetUserId) return;
 
-    const userObj = users.find(u => u.id === Number(targetUserId)) || users[0];
+    const userObj = usersToDisplay.find(u => u.id === Number(targetUserId)) || usersToDisplay[0];
 
     // PostgreSQL Record Payload for individual_access
     const individualRecord = {

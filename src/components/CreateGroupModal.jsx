@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, ChevronDown, Check, Users, FileEdit, Eye, CheckSquare, Award, Building } from 'lucide-react';
 import { officeCategories, offices, departments, designations, users, getOfficeCategoryName, getOfficeName, getDepartmentName, getDesignationName } from '../data/mockData';
 
-export default function CreateGroupModal({ isOpen, onClose, onSubmit }) {
+export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers = [] }) {
   const [groupName, setGroupName] = useState('');
   const [dmsAccessLevel, setDmsAccessLevel] = useState('full_control'); // PostgreSQL enum ('full_control' | 'read_only')
   const [workflowRole, setWorkflowRole] = useState('reviewer');         // PostgreSQL enum ('reviewer' | 'approver')
@@ -16,23 +16,23 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit }) {
 
   if (!isOpen) return null;
 
+  const usersToDisplay = (allUsers && allUsers.length > 0) ? allUsers : users;
+
   // Filter offices by category if selected
   const filteredOffices = officeCategoryId
     ? offices.filter(o => o.office_category_id === Number(officeCategoryId))
     : offices;
 
   // Filter users by department/designation if selected
-  const strictUsers = users.filter(u => {
-    if (departmentId && u.department_id !== Number(departmentId)) return false;
-    if (designationId && u.designation_id !== Number(designationId)) return false;
+  const strictUsers = usersToDisplay.filter(u => {
+    if (departmentId && u.department_id && u.department_id !== Number(departmentId)) return false;
+    if (designationId && u.designation_id && u.designation_id !== Number(designationId)) return false;
     return true;
   });
 
   const filteredUsers = strictUsers.length > 0
     ? strictUsers
-    : (departmentId || designationId
-        ? users.filter(u => (departmentId && u.department_id === Number(departmentId)) || (designationId && u.designation_id === Number(designationId)))
-        : users);
+    : usersToDisplay;
 
 
   const toggleUserSelection = (userId) => {
