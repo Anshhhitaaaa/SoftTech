@@ -184,5 +184,5 @@ Backend API will launch on **`http://localhost:5000`** with Swagger UI available
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by Google DeepMind Antigravity Pair Programming</sub>
+  <sub>Built with ❤️ by Anshita Agrawal</sub>
 </div>
