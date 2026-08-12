@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, Check, Users, FileEdit, Eye, CheckSquare, Award, Building } from 'lucide-react';
-import { officeCategories, offices, departments, designations, users, getOfficeCategoryName, getOfficeName, getDepartmentName, getDesignationName } from '../data/mockData';
+import { X, ChevronDown, Check, Users, Building } from 'lucide-react';
+import { users, getDepartmentName, getDesignationName } from '../data/mockData';
+import OrgHierarchySelectors from './common/OrgHierarchySelectors';
+import DmsRoleSelector from './common/DmsRoleSelector';
 
 export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers = [] }) {
   const [groupName, setGroupName] = useState('');
-  const [dmsAccessLevel, setDmsAccessLevel] = useState('full_control'); // PostgreSQL enum ('full_control' | 'read_only')
-  const [workflowRole, setWorkflowRole] = useState('reviewer');         // PostgreSQL enum ('reviewer' | 'approver')
+  const [dmsAccessLevel, setDmsAccessLevel] = useState('full_control');
+  const [workflowRole, setWorkflowRole] = useState('reviewer');
   
   const [officeCategoryId, setOfficeCategoryId] = useState('');
   const [officeId, setOfficeId] = useState('');
@@ -18,22 +20,13 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
 
   const usersToDisplay = (allUsers && allUsers.length > 0) ? allUsers : users;
 
-  // Filter offices by category if selected
-  const filteredOffices = officeCategoryId
-    ? offices.filter(o => o.office_category_id === Number(officeCategoryId))
-    : offices;
-
-  // Filter users by department/designation if selected
   const strictUsers = usersToDisplay.filter(u => {
     if (departmentId && u.department_id && u.department_id !== Number(departmentId)) return false;
     if (designationId && u.designation_id && u.designation_id !== Number(designationId)) return false;
     return true;
   });
 
-  const filteredUsers = strictUsers.length > 0
-    ? strictUsers
-    : usersToDisplay;
-
+  const filteredUsers = strictUsers.length > 0 ? strictUsers : usersToDisplay;
 
   const toggleUserSelection = (userId) => {
     if (selectedUserIds.includes(userId)) {
@@ -47,7 +40,6 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
     e.preventDefault();
     if (!groupName.trim()) return;
 
-    // PostgreSQL Record Payload
     const groupRecord = {
       id: Date.now(),
       group_name: groupName.trim(),
@@ -114,115 +106,13 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
             </div>
           </div>
 
-          {/* DMS Access Cards Selection */}
-          <div>
-            <label className="block font-bold text-slate-800 mb-2">
-              DMS Access <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              
-              <div
-                onClick={() => setDmsAccessLevel('full_control')}
-                className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
-                  dmsAccessLevel === 'full_control'
-                    ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center space-x-2">
-                    <FileEdit className={`w-4 h-4 ${dmsAccessLevel === 'full_control' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                    <span className="font-bold text-slate-800 text-xs">Add/edit/delete Document</span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="dms_access_level"
-                    checked={dmsAccessLevel === 'full_control'}
-                    onChange={() => {}}
-                    className="text-indigo-600 focus:ring-indigo-500"
-                  />
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">full_control</span>
-              </div>
-
-              <div
-                onClick={() => setDmsAccessLevel('read_only')}
-                className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
-                  dmsAccessLevel === 'read_only'
-                    ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center space-x-2">
-                    <Eye className={`w-4 h-4 ${dmsAccessLevel === 'read_only' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                    <span className="font-bold text-slate-800 text-xs">View only Document</span>
-                  </div>
-                  <input
-                    type="radio"
-                    name="dms_access_level"
-                    checked={dmsAccessLevel === 'read_only'}
-                    onChange={() => {}}
-                    className="text-indigo-600 focus:ring-indigo-500"
-                  />
-                </div>
-                <span className="text-[10px] text-slate-500 font-medium">read_only</span>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Template Workflow Access Cards Selection */}
-          <div>
-            <label className="block font-bold text-slate-800 mb-2">
-              Template Workflow Access
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              
-              <div
-                onClick={() => setWorkflowRole('reviewer')}
-                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                  workflowRole === 'reviewer'
-                    ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <CheckSquare className={`w-4 h-4 ${workflowRole === 'reviewer' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                  <span className="font-bold text-slate-800 text-xs">Reviewer</span>
-                </div>
-                <input
-                  type="radio"
-                  name="workflow_role"
-                  checked={workflowRole === 'reviewer'}
-                  onChange={() => {}}
-                  className="text-indigo-600 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div
-                onClick={() => setWorkflowRole('approver')}
-                className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                  workflowRole === 'approver'
-                    ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  <Award className={`w-4 h-4 ${workflowRole === 'approver' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                  <span className="font-bold text-slate-800 text-xs">Approver</span>
-                </div>
-                <input
-                  type="radio"
-                  name="workflow_role"
-                  checked={workflowRole === 'approver'}
-                  onChange={() => {}}
-                  className="text-indigo-600 focus:ring-indigo-500"
-                />
-              </div>
-
-            </div>
-          </div>
+          {/* DMS Access & Role Card Selection */}
+          <DmsRoleSelector
+            dmsAccessLevel={dmsAccessLevel}
+            setDmsAccessLevel={setDmsAccessLevel}
+            workflowRole={workflowRole}
+            setWorkflowRole={setWorkflowRole}
+          />
 
           {/* Select Users Box Container */}
           <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-4 space-y-4 shadow-inner">
@@ -233,87 +123,17 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Office Category */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Office Category <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={officeCategoryId}
-                    onChange={(e) => setOfficeCategoryId(e.target.value)}
-                    className="w-full appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs text-slate-700 pr-8 shadow-2xs font-medium"
-                  >
-                    <option value="">Select</option>
-                    {officeCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Office */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Office <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={officeId}
-                    onChange={(e) => setOfficeId(e.target.value)}
-                    className="w-full appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs text-slate-700 pr-8 shadow-2xs font-medium"
-                  >
-                    <option value="">Select</option>
-                    {filteredOffices.map((off) => (
-                      <option key={off.id} value={off.id}>{off.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Department */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Department <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={departmentId}
-                    onChange={(e) => setDepartmentId(e.target.value)}
-                    className="w-full appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs text-slate-700 pr-8 shadow-2xs font-medium"
-                  >
-                    <option value="">Select</option>
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>{dept.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Designation */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Designation <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={designationId}
-                    onChange={(e) => setDesignationId(e.target.value)}
-                    className="w-full appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs text-slate-700 pr-8 shadow-2xs font-medium"
-                  >
-                    <option value="">Select</option>
-                    {designations.map((desig) => (
-                      <option key={desig.id} value={desig.id}>{desig.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-                </div>
-              </div>
-            </div>
+            {/* Org Hierarchy Dropdowns */}
+            <OrgHierarchySelectors
+              officeCategoryId={officeCategoryId}
+              setOfficeCategoryId={setOfficeCategoryId}
+              officeId={officeId}
+              setOfficeId={setOfficeId}
+              departmentId={departmentId}
+              setDepartmentId={setDepartmentId}
+              designationId={designationId}
+              setDesignationId={setDesignationId}
+            />
 
             {/* Multi-Select Users Dropdown */}
             <div>
@@ -395,3 +215,4 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
     </div>
   );
 }
+

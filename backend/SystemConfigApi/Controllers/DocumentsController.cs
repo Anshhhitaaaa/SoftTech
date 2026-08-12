@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SystemConfigApi.Data;
 using SystemConfigApi.DTOs;
-using SystemConfigApi.Models;
+using SystemConfigApi.Services;
 
 namespace SystemConfigApi.Controllers
 {
@@ -10,11 +8,11 @@ namespace SystemConfigApi.Controllers
     [Route("api/[controller]")]
     public class DocumentsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IDocumentService _documentService;
 
-        public DocumentsController(AppDbContext context)
+        public DocumentsController(IDocumentService documentService)
         {
-            _context = context;
+            _documentService = documentService;
         }
 
         [HttpGet]
@@ -22,37 +20,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var query = _context.Documents
-                    .Include(d => d.CreatedByUser)
-                    .Include(d => d.ReviewedByUser)
-                    .Include(d => d.ApprovedByUser)
-                    .AsQueryable();
-
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    query = query.Where(d => d.Status.ToLower() == status.ToLower());
-                }
-
-                var docs = await query.OrderByDescending(d => d.UpdatedAt).ToListAsync();
-
-                var response = docs.Select(d => new DocumentResponseDto
-                {
-                    Id = d.Id,
-                    Title = d.Title,
-                    Category = d.Category,
-                    ContentHtml = d.ContentHtml,
-                    Status = d.Status,
-                    CreatedByUserId = d.CreatedByUserId,
-                    CreatedByUserName = d.CreatedByUser?.FullName ?? "Unknown User",
-                    ReviewedByUserId = d.ReviewedByUserId,
-                    ReviewedByUserName = d.ReviewedByUser?.FullName,
-                    ApprovedByUserId = d.ApprovedByUserId,
-                    ApprovedByUserName = d.ApprovedByUser?.FullName,
-                    ReviewerNotes = d.ReviewerNotes,
-                    CreatedAt = d.CreatedAt,
-                    UpdatedAt = d.UpdatedAt
-                }).ToList();
-
+                var response = await _documentService.GetDocumentsAsync(status);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -66,35 +34,11 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var d = await _context.Documents
-                    .Include(doc => doc.CreatedByUser)
-                    .Include(doc => doc.ReviewedByUser)
-                    .Include(doc => doc.ApprovedByUser)
-                    .FirstOrDefaultAsync(doc => doc.Id == id);
-
-                if (d == null)
+                var response = await _documentService.GetDocumentByIdAsync(id);
+                if (response == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
                 }
-
-                var response = new DocumentResponseDto
-                {
-                    Id = d.Id,
-                    Title = d.Title,
-                    Category = d.Category,
-                    ContentHtml = d.ContentHtml,
-                    Status = d.Status,
-                    CreatedByUserId = d.CreatedByUserId,
-                    CreatedByUserName = d.CreatedByUser?.FullName ?? "Unknown User",
-                    ReviewedByUserId = d.ReviewedByUserId,
-                    ReviewedByUserName = d.ReviewedByUser?.FullName,
-                    ApprovedByUserId = d.ApprovedByUserId,
-                    ApprovedByUserName = d.ApprovedByUser?.FullName,
-                    ReviewerNotes = d.ReviewerNotes,
-                    CreatedAt = d.CreatedAt,
-                    UpdatedAt = d.UpdatedAt
-                };
-
                 return Ok(response);
             }
             catch (Exception ex)
@@ -113,25 +57,8 @@ namespace SystemConfigApi.Controllers
 
             try
             {
-                var validUserIds = await _context.Users.Select(u => u.Id).ToListAsync();
-                var authorId = validUserIds.Contains(dto.CreatedByUserId) ? dto.CreatedByUserId : validUserIds.FirstOrDefault(1);
-
-                var doc = new Document
-                {
-                    Title = dto.Title,
-                    Category = string.IsNullOrWhiteSpace(dto.Category) ? "Audit & Compliance Report" : dto.Category,
-                    ContentHtml = dto.ContentHtml,
-                    Status = dto.SubmitForReview ? "Pending Review" : "Draft",
-                    CreatedByUserId = authorId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _context.Documents.Add(doc);
-                await _context.SaveChangesAsync();
-
-                var result = await GetDocument(doc.Id);
-                return CreatedAtAction(nameof(GetDocument), new { id = doc.Id }, result.Value);
+                var result = await _documentService.CreateDocumentAsync(dto);
+                return CreatedAtAction(nameof(GetDocument), new { id = result.Id }, result);
             }
             catch (Exception ex)
             {
@@ -144,32 +71,12 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var doc = await _context.Documents.FindAsync(id);
-                if (doc == null)
+                var result = await _documentService.UpdateDocumentContentAsync(id, dto);
+                if (result == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
                 }
-
-                if (!string.IsNullOrWhiteSpace(dto.Title))
-                {
-                    doc.Title = dto.Title;
-                }
-                if (!string.IsNullOrWhiteSpace(dto.Category))
-                {
-                    doc.Category = dto.Category;
-                }
-                if (dto.ContentHtml != null)
-                {
-                    doc.ContentHtml = dto.ContentHtml;
-                }
-
-                doc.Status = dto.SubmitForReview ? "Pending Review" : "Draft";
-                doc.UpdatedAt = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-
-                var result = await GetDocument(doc.Id);
-                return Ok(result.Value);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -182,36 +89,12 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var doc = await _context.Documents.FindAsync(id);
-                if (doc == null)
+                var result = await _documentService.UpdateDocumentStatusAsync(id, dto);
+                if (result == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
                 }
-
-                var validUserIds = await _context.Users.Select(u => u.Id).ToListAsync();
-                var actionUserId = validUserIds.Contains(dto.ActionByUserId) ? dto.ActionByUserId : validUserIds.FirstOrDefault(1);
-
-                doc.Status = dto.Status;
-                doc.UpdatedAt = DateTime.UtcNow;
-
-                if (!string.IsNullOrWhiteSpace(dto.ReviewerNotes))
-                {
-                    doc.ReviewerNotes = dto.ReviewerNotes;
-                }
-
-                if (dto.Status == "Pending Approval" || dto.Status == "Returned to Author")
-                {
-                    doc.ReviewedByUserId = actionUserId;
-                }
-                if (dto.Status == "Approved" || dto.Status == "Returned to Reviewer")
-                {
-                    doc.ApprovedByUserId = actionUserId;
-                }
-
-                await _context.SaveChangesAsync();
-
-                var result = await GetDocument(doc.Id);
-                return Ok(result.Value);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -224,15 +107,11 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var doc = await _context.Documents.FindAsync(id);
-                if (doc == null)
+                var deleted = await _documentService.DeleteDocumentAsync(id);
+                if (!deleted)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
                 }
-
-                _context.Documents.Remove(doc);
-                await _context.SaveChangesAsync();
-
                 return NoContent();
             }
             catch (Exception ex)
@@ -242,3 +121,4 @@ namespace SystemConfigApi.Controllers
         }
     }
 }
+

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, User, Search, Plus, RefreshCw, FileText, Clock, AlertCircle, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, User, Search, Plus, RefreshCw, Clock, RotateCcw } from 'lucide-react';
 import HeaderTabNav from './components/HeaderTabNav';
 import EmptyState from './components/EmptyState';
 import DataTable from './components/DataTable';
@@ -11,298 +11,73 @@ import WorkflowReviewModal from './components/WorkflowReviewModal';
 import DocumentsRepository from './components/DocumentsRepository';
 import LoginModal from './components/LoginModal';
 
+import { useAuth } from './hooks/useAuth';
+import { useSystemConfigData } from './hooks/useSystemConfigData';
+import { useDocumentWorkflow } from './hooks/useDocumentWorkflow';
 import {
-  users as mockUsersList,
   getOfficeCategoryName,
   getOfficeName,
   getDepartmentName,
   getDesignationName
 } from './data/mockData';
 
-import {
-  fetchUserGroups,
-  createUserGroupApi,
-  deleteUserGroupApi,
-  fetchIndividualAccesses,
-  createIndividualAccessApi,
-  deleteIndividualAccessApi,
-  fetchDocuments,
-  createDocumentApi,
-  updateDocumentContentApi,
-  updateDocumentStatusApi,
-  deleteDocumentApi,
-  fetchLookups,
-  createUserApi
-} from './services/api';
-
-const defaultUser = { id: 1, name: "Rahul Sharma", role: "Normal User", department: "Information Technology", designation: "Senior Architect" };
-
-const fallbackUsersList = mockUsersList.map(u => ({
-  id: u.id,
-  fullName: u.full_name,
-  departmentName: getDepartmentName(u.department_id),
-  designationName: getDesignationName(u.designation_id)
-}));
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access' | 'doc-editor' | 'documents-repo'
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(true); // Auto open login modal on launch
-
-  const [allDbUsers, setAllDbUsers] = useState(fallbackUsersList);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const [userGroups, setUserGroups] = useState([]);
-  const [individualAccessList, setIndividualAccessList] = useState([]);
-  const [documents, setDocuments] = useState([]);
+  // Custom Hooks
+  const {
+    currentUser,
+    setCurrentUser,
+    isLoginModalOpen,
+    openLoginModal,
+    closeLoginModal
+  } = useAuth();
 
+  const {
+    allDbUsers,
+    userGroups,
+    individualAccessList,
+    isLoading,
+    loadData,
+    handleCreateGroup,
+    handleDeleteGroup,
+    handleAddIndividualAccess,
+    handleDeleteIndividual,
+    handleSignUpUser
+  } = useSystemConfigData();
+
+  const {
+    documents,
+    approvedDocuments,
+    pendingReviewDocs,
+    pendingApprovalDocs,
+    returnedToAuthorDocs,
+    selectedReviewDoc,
+    isReviewModalOpen,
+    setIsReviewModalOpen,
+    editingDoc,
+    setEditingDoc,
+    handleCreateDocument,
+    handleUpdateDocumentContent,
+    handleUpdateDocumentStatus,
+    handleDeleteDocument,
+    handleInspectDocument,
+    handleEditReturnedDoc
+  } = useDocumentWorkflow(currentUser, setActiveTab);
+
+  // Modals state
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isIndividualModalOpen, setIsIndividualModalOpen] = useState(false);
-
   const [masterDetailItem, setMasterDetailItem] = useState(null);
   const [isMasterDetailOpen, setIsMasterDetailOpen] = useState(false);
-
-  const [selectedReviewDoc, setSelectedReviewDoc] = useState(null);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-
-  const [editingDoc, setEditingDoc] = useState(null);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    const groups = await fetchUserGroups();
-    const accesses = await fetchIndividualAccesses();
-    const docs = await fetchDocuments();
-    const lookups = await fetchLookups();
-
-    if (groups && groups.length > 0) {
-      setUserGroups(groups);
-      localStorage.setItem('softtech_user_groups', JSON.stringify(groups));
-    } else {
-      const localG = localStorage.getItem('softtech_user_groups');
-      if (localG) {
-        try { setUserGroups(JSON.parse(localG)); } catch {}
-      }
-    }
-
-    if (accesses && accesses.length > 0) {
-      setIndividualAccessList(accesses);
-      localStorage.setItem('softtech_individual_access', JSON.stringify(accesses));
-    } else {
-      const localA = localStorage.getItem('softtech_individual_access');
-      if (localA) {
-        try { setIndividualAccessList(JSON.parse(localA)); } catch {}
-      }
-    }
-
-    let finalDocs = [];
-    if (docs && docs.length > 0) {
-      finalDocs = docs;
-    } else {
-      const localSaved = localStorage.getItem('softtech_documents');
-      if (localSaved) {
-        try {
-          finalDocs = JSON.parse(localSaved);
-        } catch {
-          finalDocs = [];
-        }
-      }
-    }
-
-    if (finalDocs.length === 0) {
-      finalDocs = [
-        {
-          id: 1,
-          title: "Q3 Enterprise Information Security & Access Policy Audit",
-          category: "Audit & Compliance",
-          content_html: "<h1>Enterprise Information Security Audit</h1><p>Comprehensive review of group policies and individual access assignments across regional offices.</p>",
-          status: "Approved",
-          created_by_user_id: 1,
-          created_by_user_name: "Rahul Sharma",
-          reviewed_by_user_id: 2,
-          reviewed_by_user_name: "Priya Patel",
-          approved_by_user_id: 8,
-          approved_by_user_name: "Kavita Singh",
-          reviewer_notes: "Verified against Q3 compliance matrix. All criteria satisfied.",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-    }
-
-    setDocuments(finalDocs);
-    localStorage.setItem('softtech_documents', JSON.stringify(finalDocs));
-
-    let dbUsers = (lookups && lookups.users && lookups.users.length > 0) ? lookups.users : fallbackUsersList;
-    const localUsers = localStorage.getItem('softtech_users');
-    if (localUsers) {
-      try {
-        const parsed = JSON.parse(localUsers);
-        if (Array.isArray(parsed)) {
-          // Merge local users without duplicating IDs
-          const existingIds = new Set(dbUsers.map(u => u.id));
-          const extraUsers = parsed.filter(u => !existingIds.has(u.id));
-          dbUsers = [...extraUsers, ...dbUsers];
-        }
-      } catch {
-        // ignore
-      }
-    }
-    setAllDbUsers(dbUsers);
-
-    setIsLoading(false);
-  };
-
-  const handleSignUpUser = async (newUserObj) => {
-    // 1. Send to Backend DB API
-    const savedUser = await createUserApi(newUserObj);
-    const userToSave = savedUser || newUserObj;
-
-    // 2. Update React State
-    setAllDbUsers(prev => {
-      const updated = [userToSave, ...prev.filter(u => u.id !== userToSave.id)];
-      localStorage.setItem('softtech_users', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Save documents to localStorage whenever documents state updates
-  useEffect(() => {
-    if (documents && documents.length > 0) {
-      localStorage.setItem('softtech_documents', JSON.stringify(documents));
-    }
-  }, [documents]);
-
-  const handleCreateGroup = async (newGroupData) => {
-    const savedGroup = await createUserGroupApi(newGroupData);
-    const itemToSave = savedGroup || newGroupData;
-    const updated = [itemToSave, ...userGroups];
-    setUserGroups(updated);
-    localStorage.setItem('softtech_user_groups', JSON.stringify(updated));
-  };
-
-  const handleAddIndividualAccess = async (newAccessData) => {
-    const savedAccess = await createIndividualAccessApi(newAccessData);
-    const itemToSave = savedAccess || newAccessData;
-    const updated = [itemToSave, ...individualAccessList];
-    setIndividualAccessList(updated);
-    localStorage.setItem('softtech_individual_access', JSON.stringify(updated));
-  };
-
-  const handleDeleteGroup = async (id) => {
-    await deleteUserGroupApi(id);
-    const updated = userGroups.filter(g => g.id !== id);
-    setUserGroups(updated);
-    localStorage.setItem('softtech_user_groups', JSON.stringify(updated));
-  };
-
-  const handleDeleteIndividual = async (id) => {
-    await deleteIndividualAccessApi(id);
-    const updated = individualAccessList.filter(i => i.id !== id);
-    setIndividualAccessList(updated);
-    localStorage.setItem('softtech_individual_access', JSON.stringify(updated));
-  };
-
-  // Document Workflow Handlers
-  const handleCreateDocument = async (docRecord) => {
-    const savedDoc = await createDocumentApi(docRecord);
-    const newDocObj = savedDoc || {
-      id: Date.now(),
-      title: docRecord.title,
-      category: docRecord.category,
-      content_html: docRecord.content_html,
-      status: docRecord.submit_for_review ? 'Pending Review' : 'Draft',
-      created_by_user_id: currentUser?.id || 1,
-      created_by_user_name: currentUser?.name || "Author",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    setDocuments([newDocObj, ...documents]);
-
-    if (docRecord.submit_for_review) {
-      alert(`Report "${docRecord.title}" submitted to Reviewer queue! Current status: Pending Review.`);
-    }
-  };
-
-  const handleUpdateDocumentContent = async (id, docRecord) => {
-    const updatedDoc = await updateDocumentContentApi(id, docRecord);
-    if (updatedDoc) {
-      setDocuments(documents.map(d => d.id === id ? updatedDoc : d));
-    } else {
-      setDocuments(documents.map(d => {
-        if (d.id === id) {
-          return {
-            ...d,
-            title: docRecord.title,
-            category: docRecord.category,
-            content_html: docRecord.content_html,
-            status: docRecord.submit_for_review ? 'Pending Review' : 'Draft',
-            updated_at: new Date().toISOString()
-          };
-        }
-        return d;
-      }));
-    }
-    setEditingDoc(null);
-    alert(`Document #${id} updated and resubmitted to Reviewer queue!`);
-  };
-
-  const handleUpdateDocumentStatus = async (id, status, actionUserId, reviewerNotes) => {
-    const updatedDoc = await updateDocumentStatusApi(id, status, actionUserId, reviewerNotes);
-    if (updatedDoc) {
-      setDocuments(documents.map(d => d.id === id ? updatedDoc : d));
-    } else {
-      setDocuments(documents.map(d => {
-        if (d.id === id) {
-          return {
-            ...d,
-            status,
-            reviewer_notes: reviewerNotes || d.reviewer_notes,
-            reviewed_by_user_name: status === 'Pending Approval' ? (currentUser?.name || "Reviewer") : d.reviewed_by_user_name,
-            approved_by_user_name: status === 'Approved' ? (currentUser?.name || "Approver") : d.approved_by_user_name,
-            updated_at: new Date().toISOString()
-          };
-        }
-        return d;
-      }));
-    }
-
-    if (status === 'Approved') {
-      alert(`Document finalized by Approver (${currentUser.name})! Published in Documents menu.`);
-      setActiveTab('documents-repo');
-    } else if (status === 'Returned to Author') {
-      alert(`Document #${id} sent back to Author with comments.`);
-    } else if (status === 'Returned to Reviewer') {
-      alert(`Document #${id} sent back to Reviewer with comments.`);
-    }
-  };
-
-  const handleDeleteDocument = async (id) => {
-    await deleteDocumentApi(id);
-    setDocuments(documents.filter(d => d.id !== id));
-  };
 
   const handleOpenMasterDetail = (item) => {
     setMasterDetailItem(item);
     setIsMasterDetailOpen(true);
   };
 
-  const handleInspectDocument = (doc) => {
-    setSelectedReviewDoc(doc);
-    setIsReviewModalOpen(true);
-  };
-
-  const handleEditReturnedDoc = (doc) => {
-    setEditingDoc(doc);
-    setActiveTab('doc-editor');
-  };
-
-  // Search Filters
+  // Filter Logic
   const filteredGroups = userGroups.filter(g => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
@@ -329,11 +104,6 @@ export default function App() {
     return matchUserName || matchDept || matchDesig || matchOffice || matchOfficeCat || matchDms || matchRole;
   });
 
-  const approvedDocuments = documents.filter(d => d.status === 'Approved');
-  const pendingReviewDocs = documents.filter(d => d.status === 'Pending Review' || d.status === 'Returned to Reviewer');
-  const pendingApprovalDocs = documents.filter(d => d.status === 'Pending Approval');
-  const returnedToAuthorDocs = documents.filter(d => d.status === 'Returned to Author');
-
   const filteredDocuments = approvedDocuments.filter(d => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
@@ -355,10 +125,10 @@ export default function App() {
         individualCount={individualAccessList.length}
         documentCount={approvedDocuments.length}
         currentUser={currentUser}
-        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        onOpenLoginModal={openLoginModal}
       />
 
-      {/* Role-Based Workflow Banner */}
+      {/* Role-Based Workflow Banners */}
       {currentUser?.role === 'Reviewer' && pendingReviewDocs.length > 0 && (
         <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs px-4 py-2 flex items-center justify-between shadow-xs animate-fadeIn">
           <div className="flex items-center space-x-2">
@@ -415,7 +185,7 @@ export default function App() {
 
       <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col">
 
-        {/* Tab 1: User Groups & Tab 2: Individual Access */}
+        {/* Tab 1 & Tab 2: User Groups / Individual Access */}
         {(isGroupTab || isIndividualTab) && (
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0 transition-all duration-200">
 
@@ -533,7 +303,7 @@ export default function App() {
       {/* Modals */}
       <LoginModal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={closeLoginModal}
         allUsers={allDbUsers}
         currentUser={currentUser}
         onLoginSuccess={(loggedUser) => {
@@ -581,3 +351,4 @@ export default function App() {
     </div>
   );
 }
+

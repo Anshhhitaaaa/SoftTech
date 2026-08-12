@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SystemConfigApi.Data;
+using SystemConfigApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
@@ -7,6 +8,11 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnCh
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register Domain Services
+builder.Services.AddScoped<IUserGroupService, UserGroupService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IIndividualAccessService, IndividualAccessService>();
 
 builder.Services.AddCors(options =>
 {
@@ -17,6 +23,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
 
 var rawConnStr = builder.Configuration.GetConnectionString("PostgreSQLConnection") 
                  ?? Environment.GetEnvironmentVariable("ConnectionStrings__PostgreSQLConnection");

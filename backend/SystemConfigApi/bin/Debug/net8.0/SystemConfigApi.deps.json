@@ -10,6 +10,7 @@
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "8.0.2",
           "Microsoft.EntityFrameworkCore.Design": "8.0.2",
+          "Microsoft.EntityFrameworkCore.InMemory": "8.0.2",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.2",
           "Swashbuckle.AspNetCore": "6.5.0"
         },
@@ -278,6 +279,17 @@
           }
         }
       },
+      "Microsoft.EntityFrameworkCore.InMemory/8.0.2": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "8.0.2"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "assemblyVersion": "8.0.2.0",
+            "fileVersion": "8.0.224.6803"
+          }
+        }
+      },
       "Microsoft.EntityFrameworkCore.Relational/8.0.2": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "8.0.2"
@@ -513,6 +525,13 @@
       "sha512": "sha512-lpSEopadyq4VjgErVbKXznlzmrdR+1zG4jjJlumgnDTz6Ov60qZkBn8uTfPYk0PUZ3wn+GNFOi3ouSTK4JKEIA==",
       "path": "microsoft.entityframeworkcore.design/8.0.2",
       "hashPath": "microsoft.entityframeworkcore.design.8.0.2.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.InMemory/8.0.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vPpioRk+6BwQf/apqBQQ2gLL/6FMOj25L6d2lli08FmRh2W9QrnShyKhzsDAydWcH6Po69gQXgHbBQFAafmo3A==",
+      "path": "microsoft.entityframeworkcore.inmemory/8.0.2",
+      "hashPath": "microsoft.entityframeworkcore.inmemory.8.0.2.nupkg.sha512"
     },
     "Microsoft.EntityFrameworkCore.Relational/8.0.2": {
       "type": "package",

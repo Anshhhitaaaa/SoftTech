@@ -105,3 +105,4 @@ D:\SoftTech\App_1\backend\SystemConfigApi\obj\Debug\net8.0\SystemConfigApi.pdb
 D:\SoftTech\App_1\backend\SystemConfigApi\obj\Debug\net8.0\SystemConfigApi.genruntimeconfig.cache
 D:\SoftTech\App_1\backend\SystemConfigApi\obj\Debug\net8.0\ref\SystemConfigApi.dll
 D:\SoftTech\App_1\backend\SystemConfigApi\obj\Debug\net8.0\SystemConfigApi.sourcelink.json
+D:\SoftTech\App_1\backend\SystemConfigApi\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll

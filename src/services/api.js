@@ -1,3 +1,4 @@
+// Centralized API Service Module for SoftTech
 import { getOfficeCategoryName, getOfficeName, getDepartmentName, getDesignationName, getUser } from '../data/mockData';
 
 const isLocalhost = typeof window !== 'undefined' && Boolean(
@@ -8,6 +9,97 @@ const isLocalhost = typeof window !== 'undefined' && Boolean(
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (isLocalhost ? 'http://localhost:5000/api' : 'https://softtech-api.onrender.com/api');
+
+/**
+ * Generic HTTP Request Helper
+ */
+async function apiFetch(endpoint, options = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const config = {
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options
+  };
+
+  try {
+    const response = await fetch(url, config);
+    if (!response.ok) {
+      console.warn(`[API Warning] ${config.method || 'GET'} ${url} returned ${response.status}`);
+      return null;
+    }
+    if (response.status === 204) return true;
+    return await response.json();
+  } catch (error) {
+    console.error(`[API Error] ${config.method || 'GET'} ${url} failed:`, error.message);
+    return null;
+  }
+}
+
+// ----------------------------------------------------
+// DTO & Data Mappers
+// ----------------------------------------------------
+export function mapGroupFromApi(g, fallbackFormData = {}) {
+  if (!g) return null;
+  const firstMember = g.members && g.members.length > 0 ? g.members[0] : null;
+  return {
+    id: g.id,
+    group_name: g.groupName,
+    dms_access_level: g.dmsAccessLevel,
+    workflow_role: g.workflowRole,
+    created_at: g.createdAt,
+    office_category_id: firstMember ? firstMember.officeCategoryId : (Number(fallbackFormData.office_category_id) || 1),
+    office_id: firstMember ? firstMember.officeId : (Number(fallbackFormData.office_id) || 1),
+    department_id: firstMember ? firstMember.departmentId : (Number(fallbackFormData.department_id) || 1),
+    designation_id: firstMember ? firstMember.designationId : (Number(fallbackFormData.designation_id) || 1),
+    members: g.members || [],
+    users_list: (g.members || []).map(m => ({
+      id: m.userId,
+      full_name: m.userName
+    }))
+  };
+}
+
+export function mapIndividualFromApi(i) {
+  if (!i) return null;
+  return {
+    id: i.id,
+    office_category_id: i.officeCategoryId,
+    office_category_name: i.officeCategoryName,
+    office_id: i.officeId,
+    office_name: i.officeName,
+    department_id: i.departmentId,
+    department_name: i.departmentName,
+    designation_id: i.designationId,
+    designation_name: i.designationName,
+    target_user_id: i.targetUserId,
+    user: {
+      id: i.targetUserId,
+      full_name: i.targetUserName
+    },
+    dms_access_level: i.dmsAccessLevel,
+    workflow_role: i.workflowRole,
+    created_at: i.createdAt
+  };
+}
+
+export function mapDocumentFromApi(d) {
+  if (!d) return null;
+  return {
+    id: d.id,
+    title: d.title,
+    category: d.category,
+    content_html: d.contentHtml,
+    status: d.status,
+    created_by_user_id: d.createdByUserId,
+    created_by_user_name: d.createdByUserName,
+    reviewed_by_user_id: d.reviewedByUserId,
+    reviewed_by_user_name: d.reviewedByUserName,
+    approved_by_user_id: d.approvedByUserId,
+    approved_by_user_name: d.approvedByUserName,
+    reviewer_notes: d.reviewerNotes,
+    created_at: d.createdAt,
+    updated_at: d.updatedAt
+  };
+}
 
 export function formatUserGroupPayload(formData) {
   return {
@@ -36,178 +128,45 @@ export function formatIndividualAccessPayload(formData) {
   };
 }
 
+// ----------------------------------------------------
+// API Service Methods
+// ----------------------------------------------------
 export async function fetchUserGroups() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/usergroups`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    
-    return data.map(g => {
-      const firstMember = g.members && g.members.length > 0 ? g.members[0] : null;
-      return {
-        id: g.id,
-        group_name: g.groupName,
-        dms_access_level: g.dmsAccessLevel,
-        workflow_role: g.workflowRole,
-        created_at: g.createdAt,
-        office_category_id: firstMember ? firstMember.officeCategoryId : 1,
-        office_id: firstMember ? firstMember.officeId : 1,
-        department_id: firstMember ? firstMember.departmentId : 1,
-        designation_id: firstMember ? firstMember.designationId : 1,
-        members: g.members || [],
-        users_list: (g.members || []).map(m => ({
-          id: m.userId,
-          full_name: m.userName
-        }))
-      };
-    });
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch('/usergroups');
+  return Array.isArray(data) ? data.map(g => mapGroupFromApi(g)) : null;
 }
 
 export async function createUserGroupApi(formData) {
   const payload = formatUserGroupPayload(formData);
-  try {
-    const response = await fetch(`${API_BASE_URL}/usergroups`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to create group. Status: ${response.status}`);
-    const g = await response.json();
-    const firstMember = g.members && g.members.length > 0 ? g.members[0] : null;
-    return {
-      id: g.id,
-      group_name: g.groupName,
-      dms_access_level: g.dmsAccessLevel,
-      workflow_role: g.workflowRole,
-      created_at: g.createdAt,
-      office_category_id: firstMember ? firstMember.officeCategoryId : (Number(formData.office_category_id) || 1),
-      office_id: firstMember ? firstMember.officeId : (Number(formData.office_id) || 1),
-      department_id: firstMember ? firstMember.departmentId : (Number(formData.department_id) || 1),
-      designation_id: firstMember ? firstMember.designationId : (Number(formData.designation_id) || 1),
-      members: g.members || [],
-      users_list: (g.members || []).map(m => ({
-        id: m.userId,
-        full_name: m.userName
-      }))
-    };
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch('/usergroups', { method: 'POST', body: JSON.stringify(payload) });
+  return data ? mapGroupFromApi(data, formData) : null;
 }
 
 export async function deleteUserGroupApi(id) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/usergroups/${id}`, { method: 'DELETE' });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+  const result = await apiFetch(`/usergroups/${id}`, { method: 'DELETE' });
+  return result !== null;
 }
 
 export async function fetchIndividualAccesses() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/individualaccess`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-
-    return data.map(i => ({
-      id: i.id,
-      office_category_id: i.officeCategoryId,
-      office_category_name: i.officeCategoryName,
-      office_id: i.officeId,
-      office_name: i.officeName,
-      department_id: i.departmentId,
-      department_name: i.departmentName,
-      designation_id: i.designationId,
-      designation_name: i.designationName,
-      target_user_id: i.targetUserId,
-      user: {
-        id: i.targetUserId,
-        full_name: i.targetUserName
-      },
-      dms_access_level: i.dmsAccessLevel,
-      workflow_role: i.workflowRole,
-      created_at: i.createdAt
-    }));
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch('/individualaccess');
+  return Array.isArray(data) ? data.map(mapIndividualFromApi) : null;
 }
 
 export async function createIndividualAccessApi(formData) {
   const payload = formatIndividualAccessPayload(formData);
-  try {
-    const response = await fetch(`${API_BASE_URL}/individualaccess`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to save access. Status: ${response.status}`);
-    const i = await response.json();
-    return {
-      id: i.id,
-      office_category_id: i.officeCategoryId,
-      office_category_name: i.officeCategoryName,
-      office_id: i.officeId,
-      office_name: i.officeName,
-      department_id: i.departmentId,
-      department_name: i.departmentName,
-      designation_id: i.designationId,
-      designation_name: i.designationName,
-      target_user_id: i.targetUserId,
-      user: {
-        id: i.targetUserId,
-        full_name: i.targetUserName
-      },
-      dms_access_level: i.dmsAccessLevel,
-      workflow_role: i.workflowRole,
-      created_at: i.createdAt
-    };
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch('/individualaccess', { method: 'POST', body: JSON.stringify(payload) });
+  return data ? mapIndividualFromApi(data) : null;
 }
 
 export async function deleteIndividualAccessApi(id) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/individualaccess/${id}`, { method: 'DELETE' });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+  const result = await apiFetch(`/individualaccess/${id}`, { method: 'DELETE' });
+  return result !== null;
 }
 
-// ----------------------------------------------------
-// Document Automation & Workflow API Functions
-// ----------------------------------------------------
 export async function fetchDocuments(status = null) {
-  try {
-    const url = status ? `${API_BASE_URL}/documents?status=${encodeURIComponent(status)}` : `${API_BASE_URL}/documents`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.map(d => ({
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      content_html: d.contentHtml,
-      status: d.status,
-      created_by_user_id: d.createdByUserId,
-      created_by_user_name: d.createdByUserName,
-      reviewed_by_user_id: d.reviewedByUserId,
-      reviewed_by_user_name: d.reviewedByUserName,
-      approved_by_user_id: d.approvedByUserId,
-      approved_by_user_name: d.approvedByUserName,
-      reviewer_notes: d.reviewerNotes,
-      created_at: d.createdAt,
-      updated_at: d.updatedAt
-    }));
-  } catch (error) {
-    return null;
-  }
+  const endpoint = status ? `/documents?status=${encodeURIComponent(status)}` : '/documents';
+  const data = await apiFetch(endpoint);
+  return Array.isArray(data) ? data.map(mapDocumentFromApi) : null;
 }
 
 export async function createDocumentApi(docData) {
@@ -218,33 +177,8 @@ export async function createDocumentApi(docData) {
     createdByUserId: Number(docData.created_by_user_id || 1),
     submitForReview: Boolean(docData.submit_for_review)
   };
-  try {
-    const response = await fetch(`${API_BASE_URL}/documents`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to create document. Status: ${response.status}`);
-    const d = await response.json();
-    return {
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      content_html: d.contentHtml,
-      status: d.status,
-      created_by_user_id: d.createdByUserId,
-      created_by_user_name: d.createdByUserName,
-      reviewed_by_user_id: d.reviewedByUserId,
-      reviewed_by_user_name: d.reviewedByUserName,
-      approved_by_user_id: d.approvedByUserId,
-      approved_by_user_name: d.approvedByUserName,
-      reviewer_notes: d.reviewerNotes,
-      created_at: d.createdAt,
-      updated_at: d.updatedAt
-    };
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch('/documents', { method: 'POST', body: JSON.stringify(payload) });
+  return data ? mapDocumentFromApi(data) : null;
 }
 
 export async function updateDocumentContentApi(id, docData) {
@@ -255,87 +189,27 @@ export async function updateDocumentContentApi(id, docData) {
     submitForReview: Boolean(docData.submit_for_review),
     actionByUserId: Number(docData.action_by_user_id || 1)
   };
-  try {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to update document content. Status: ${response.status}`);
-    const d = await response.json();
-    return {
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      content_html: d.contentHtml,
-      status: d.status,
-      created_by_user_id: d.createdByUserId,
-      created_by_user_name: d.createdByUserName,
-      reviewed_by_user_id: d.reviewedByUserId,
-      reviewed_by_user_name: d.reviewedByUserName,
-      approved_by_user_id: d.approvedByUserId,
-      approved_by_user_name: d.approvedByUserName,
-      reviewer_notes: d.reviewerNotes,
-      created_at: d.createdAt,
-      updated_at: d.updatedAt
-    };
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch(`/documents/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+  return data ? mapDocumentFromApi(data) : null;
 }
 
 export async function updateDocumentStatusApi(id, status, actionByUserId, reviewerNotes = null) {
   const payload = {
-    status: status,
+    status,
     actionByUserId: Number(actionByUserId || 1),
-    reviewerNotes: reviewerNotes
+    reviewerNotes
   };
-  try {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to update status. Status: ${response.status}`);
-    const d = await response.json();
-    return {
-      id: d.id,
-      title: d.title,
-      category: d.category,
-      content_html: d.contentHtml,
-      status: d.status,
-      created_by_user_id: d.createdByUserId,
-      created_by_user_name: d.createdByUserName,
-      reviewed_by_user_id: d.reviewedByUserId,
-      reviewed_by_user_name: d.reviewedByUserName,
-      approved_by_user_id: d.approvedByUserId,
-      approved_by_user_name: d.approvedByUserName,
-      reviewer_notes: d.reviewerNotes,
-      created_at: d.createdAt,
-      updated_at: d.updatedAt
-    };
-  } catch (error) {
-    return null;
-  }
+  const data = await apiFetch(`/documents/${id}/status`, { method: 'PUT', body: JSON.stringify(payload) });
+  return data ? mapDocumentFromApi(data) : null;
 }
 
 export async function deleteDocumentApi(id) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}`, { method: 'DELETE' });
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+  const result = await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+  return result !== null;
 }
 
 export async function fetchLookups() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/lookup/all`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
+  return await apiFetch('/lookup/all');
 }
 
 export async function createUserApi(userData) {
@@ -345,27 +219,19 @@ export async function createUserApi(userData) {
     designationName: userData.designationName || userData.designation_name || "Senior Specialist",
     role: userData.role || "Normal User"
   };
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Failed to create user. Status: ${response.status}`);
-    const u = await response.json();
-    return {
-      id: u.id,
-      fullName: u.fullName,
-      full_name: u.fullName,
-      departmentName: u.departmentName,
-      department_name: u.departmentName,
-      designationName: u.designationName,
-      designation_name: u.designationName,
-      role: u.role
-    };
-  } catch (error) {
-    return null;
-  }
+  const u = await apiFetch('/users', { method: 'POST', body: JSON.stringify(payload) });
+  if (!u) return null;
+  return {
+    id: u.id,
+    fullName: u.fullName,
+    full_name: u.fullName,
+    departmentName: u.departmentName,
+    department_name: u.departmentName,
+    designationName: u.designationName,
+    designation_name: u.designationName,
+    role: u.role
+  };
 }
+
 
 
