@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {}
+    "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {}
   },
   "projects": {
-    "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {
+    "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
+        "projectUniqueName": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
         "projectName": "SystemConfigApi",
-        "projectPath": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
+        "projectPath": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\obj\\",
+        "outputPath": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -52,6 +52,10 @@
           "framework": "net8.0",
           "targetAlias": "net8.0",
           "dependencies": {
+            "MediatR": {
+              "target": "Package",
+              "version": "[12.4.1, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.2, )"
