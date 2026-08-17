@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using SystemConfigApi.Controllers;
 using SystemConfigApi.Data;
 using SystemConfigApi.DTOs;
+using SystemConfigApi.Features.Documents.Commands;
+using SystemConfigApi.Features.Documents.Queries;
 using SystemConfigApi.Models;
 using Xunit;
 
@@ -22,7 +24,7 @@ namespace SystemConfigApi.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetDocuments_ReturnsSuccessResult()
+        public async Task GetDocumentsQuery_ReturnsList()
         {
             using var context = GetInMemoryDbContext();
             context.Documents.Add(new Document
@@ -35,20 +37,18 @@ namespace SystemConfigApi.Tests.Controllers
             });
             await context.SaveChangesAsync();
 
-            var controller = new DocumentsController(context);
+            var handler = new GetDocumentsQueryHandler(context);
+            var result = await handler.Handle(new GetDocumentsQuery(null), CancellationToken.None);
 
-            var result = await controller.GetDocuments(null);
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var docs = Assert.IsAssignableFrom<IEnumerable<DocumentResponseDto>>(okResult.Value);
-            Assert.NotEmpty(docs);
+            Assert.NotEmpty(result);
+            Assert.Contains(result, d => d.Title == "Test Security Report");
         }
 
         [Fact]
-        public async Task CreateDocument_ValidDto_CreatesAndReturnsDocument()
+        public async Task CreateDocumentCommand_ValidDto_CreatesAndReturnsDocument()
         {
             using var context = GetInMemoryDbContext();
-            var controller = new DocumentsController(context);
+            var handler = new CreateDocumentCommandHandler(context);
 
             var dto = new CreateDocumentDto
             {
@@ -59,16 +59,14 @@ namespace SystemConfigApi.Tests.Controllers
                 SubmitForReview = true
             };
 
-            var result = await controller.CreateDocument(dto);
+            var doc = await handler.Handle(new CreateDocumentCommand(dto), CancellationToken.None);
 
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var doc = Assert.IsType<DocumentResponseDto>(createdResult.Value);
             Assert.Equal("New Compliance Audit", doc.Title);
             Assert.Equal("Pending Review", doc.Status);
         }
 
         [Fact]
-        public async Task UpdateDocumentStatus_TransitionToApproved_UpdatesDocument()
+        public async Task UpdateDocumentStatusCommand_TransitionToApproved_UpdatesDocument()
         {
             using var context = GetInMemoryDbContext();
             var doc = new Document
@@ -82,7 +80,7 @@ namespace SystemConfigApi.Tests.Controllers
             context.Documents.Add(doc);
             await context.SaveChangesAsync();
 
-            var controller = new DocumentsController(context);
+            var handler = new UpdateDocumentStatusCommandHandler(context);
 
             var dto = new UpdateDocumentStatusDto
             {
@@ -91,16 +89,15 @@ namespace SystemConfigApi.Tests.Controllers
                 ReviewerNotes = "Final sign-off complete."
             };
 
-            var result = await controller.UpdateDocumentStatus(doc.Id, dto);
+            var updatedDoc = await handler.Handle(new UpdateDocumentStatusCommand(doc.Id, dto), CancellationToken.None);
 
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var updatedDoc = Assert.IsType<DocumentResponseDto>(okResult.Value);
-            Assert.Equal("Approved", updatedDoc.Status);
+            Assert.NotNull(updatedDoc);
+            Assert.Equal("Approved", updatedDoc!.Status);
             Assert.Equal(8, updatedDoc.ApprovedByUserId);
         }
 
         [Fact]
-        public async Task DeleteDocument_ExistingId_RemovesRecord()
+        public async Task DeleteDocumentCommand_ExistingId_RemovesRecord()
         {
             using var context = GetInMemoryDbContext();
             var doc = new Document
@@ -113,11 +110,11 @@ namespace SystemConfigApi.Tests.Controllers
             context.Documents.Add(doc);
             await context.SaveChangesAsync();
 
-            var controller = new DocumentsController(context);
+            var handler = new DeleteDocumentCommandHandler(context);
 
-            var result = await controller.DeleteDocument(doc.Id);
+            var result = await handler.Handle(new DeleteDocumentCommand(doc.Id), CancellationToken.None);
 
-            Assert.IsType<NoContentResult>(result);
+            Assert.True(result);
             Assert.Null(await context.Documents.FindAsync(doc.Id));
         }
     }

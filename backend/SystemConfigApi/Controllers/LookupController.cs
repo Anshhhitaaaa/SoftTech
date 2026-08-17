@@ -1,6 +1,6 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SystemConfigApi.Data;
+using SystemConfigApi.Features.Lookups.Queries;
 
 namespace SystemConfigApi.Controllers
 {
@@ -8,29 +8,24 @@ namespace SystemConfigApi.Controllers
     [Route("api/[controller]")]
     public class LookupController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IMediator _mediator;
 
-        public LookupController(AppDbContext context)
+        public LookupController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllLookups()
         {
-            var categories = await _context.OfficeCategories.ToListAsync();
-            var offices = await _context.Offices.ToListAsync();
-            var departments = await _context.Departments.ToListAsync();
-            var designations = await _context.Designations.ToListAsync();
-            var users = await _context.Users.ToListAsync();
-
+            var result = await _mediator.Send(new GetAllLookupsQuery());
             return Ok(new
             {
-                officeCategories = categories,
-                offices = offices,
-                departments = departments,
-                designations = designations,
-                users = users
+                officeCategories = result.OfficeCategories,
+                offices = result.Offices,
+                departments = result.Departments,
+                designations = result.Designations,
+                users = result.Users
             });
         }
     }

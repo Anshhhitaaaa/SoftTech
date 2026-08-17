@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SystemConfigApi.Controllers;
 using SystemConfigApi.Data;
 using SystemConfigApi.DTOs;
+using SystemConfigApi.Features.UserGroups.Commands;
+using SystemConfigApi.Features.UserGroups.Queries;
 using SystemConfigApi.Models;
 using Xunit;
 
@@ -22,7 +22,7 @@ namespace SystemConfigApi.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetUserGroups_ReturnsSuccessStatusCodeAndList()
+        public async Task GetUserGroupsQuery_ReturnsList()
         {
             using var context = GetInMemoryDbContext();
             context.UserGroups.Add(new UserGroup
@@ -33,20 +33,18 @@ namespace SystemConfigApi.Tests.Controllers
             });
             await context.SaveChangesAsync();
 
-            var controller = new UserGroupsController(context);
+            var handler = new GetUserGroupsQueryHandler(context);
+            var groups = await handler.Handle(new GetUserGroupsQuery(), CancellationToken.None);
 
-            var result = await controller.GetUserGroups();
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var groups = Assert.IsAssignableFrom<IEnumerable<UserGroupResponseDto>>(okResult.Value);
             Assert.NotEmpty(groups);
+            Assert.Contains(groups, g => g.GroupName == "Security Lead Policy");
         }
 
         [Fact]
-        public async Task CreateUserGroup_ValidDto_CreatesAndReturnsGroup()
+        public async Task CreateUserGroupCommand_ValidDto_CreatesAndReturnsGroup()
         {
             using var context = GetInMemoryDbContext();
-            var controller = new UserGroupsController(context);
+            var handler = new CreateUserGroupCommandHandler(context);
 
             var dto = new CreateUserGroupDto
             {
@@ -66,15 +64,13 @@ namespace SystemConfigApi.Tests.Controllers
                 }
             };
 
-            var result = await controller.CreateUserGroup(dto);
+            var group = await handler.Handle(new CreateUserGroupCommand(dto), CancellationToken.None);
 
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var group = Assert.IsType<UserGroupResponseDto>(createdResult.Value);
             Assert.Equal("Executive Group Policy", group.GroupName);
         }
 
         [Fact]
-        public async Task DeleteUserGroup_ExistingId_RemovesGroupFromDatabase()
+        public async Task DeleteUserGroupCommand_ExistingId_RemovesGroupFromDatabase()
         {
             using var context = GetInMemoryDbContext();
             var group = new UserGroup
@@ -86,11 +82,10 @@ namespace SystemConfigApi.Tests.Controllers
             context.UserGroups.Add(group);
             await context.SaveChangesAsync();
 
-            var controller = new UserGroupsController(context);
+            var handler = new DeleteUserGroupCommandHandler(context);
+            var result = await handler.Handle(new DeleteUserGroupCommand(group.Id), CancellationToken.None);
 
-            var result = await controller.DeleteUserGroup(group.Id);
-
-            Assert.IsType<NoContentResult>(result);
+            Assert.True(result);
             Assert.Null(await context.UserGroups.FindAsync(group.Id));
         }
     }

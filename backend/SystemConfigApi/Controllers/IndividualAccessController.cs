@@ -1,6 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SystemConfigApi.DTOs;
-using SystemConfigApi.Services;
+using SystemConfigApi.Features.IndividualAccess.Commands;
+using SystemConfigApi.Features.IndividualAccess.Queries;
 
 namespace SystemConfigApi.Controllers
 {
@@ -8,11 +10,11 @@ namespace SystemConfigApi.Controllers
     [Route("api/[controller]")]
     public class IndividualAccessController : ControllerBase
     {
-        private readonly IIndividualAccessService _accessService;
+        private readonly IMediator _mediator;
 
-        public IndividualAccessController(IIndividualAccessService accessService)
+        public IndividualAccessController(IMediator mediator)
         {
-            _accessService = accessService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -20,7 +22,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _accessService.GetAllAccessesAsync();
+                var response = await _mediator.Send(new GetIndividualAccessesQuery());
                 return Ok(response);
             }
             catch (Exception ex)
@@ -34,7 +36,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _accessService.GetAccessByIdAsync(id);
+                var response = await _mediator.Send(new GetIndividualAccessByIdQuery(id));
                 if (response == null)
                 {
                     return NotFound(new { message = $"Individual Access record with ID {id} not found." });
@@ -52,7 +54,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var result = await _accessService.CreateAccessAsync(dto);
+                var result = await _mediator.Send(new CreateIndividualAccessCommand(dto));
                 return CreatedAtAction(nameof(GetIndividualAccess), new { id = result.Id }, result);
             }
             catch (Exception ex)
@@ -66,7 +68,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var deleted = await _accessService.DeleteAccessAsync(id);
+                var deleted = await _mediator.Send(new DeleteIndividualAccessCommand(id));
                 if (!deleted)
                 {
                     return NotFound(new { message = $"Individual Access record with ID {id} not found." });
@@ -80,4 +82,3 @@ namespace SystemConfigApi.Controllers
         }
     }
 }
-

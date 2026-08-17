@@ -1,6 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SystemConfigApi.DTOs;
-using SystemConfigApi.Services;
+using SystemConfigApi.Features.Documents.Commands;
+using SystemConfigApi.Features.Documents.Queries;
 
 namespace SystemConfigApi.Controllers
 {
@@ -8,11 +10,11 @@ namespace SystemConfigApi.Controllers
     [Route("api/[controller]")]
     public class DocumentsController : ControllerBase
     {
-        private readonly IDocumentService _documentService;
+        private readonly IMediator _mediator;
 
-        public DocumentsController(IDocumentService documentService)
+        public DocumentsController(IMediator mediator)
         {
-            _documentService = documentService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -20,7 +22,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _documentService.GetDocumentsAsync(status);
+                var response = await _mediator.Send(new GetDocumentsQuery(status));
                 return Ok(response);
             }
             catch (Exception ex)
@@ -34,7 +36,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _documentService.GetDocumentByIdAsync(id);
+                var response = await _mediator.Send(new GetDocumentByIdQuery(id));
                 if (response == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
@@ -57,7 +59,7 @@ namespace SystemConfigApi.Controllers
 
             try
             {
-                var result = await _documentService.CreateDocumentAsync(dto);
+                var result = await _mediator.Send(new CreateDocumentCommand(dto));
                 return CreatedAtAction(nameof(GetDocument), new { id = result.Id }, result);
             }
             catch (Exception ex)
@@ -71,7 +73,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var result = await _documentService.UpdateDocumentContentAsync(id, dto);
+                var result = await _mediator.Send(new UpdateDocumentCommand(id, dto));
                 if (result == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
@@ -89,7 +91,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var result = await _documentService.UpdateDocumentStatusAsync(id, dto);
+                var result = await _mediator.Send(new UpdateDocumentStatusCommand(id, dto));
                 if (result == null)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
@@ -107,7 +109,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var deleted = await _documentService.DeleteDocumentAsync(id);
+                var deleted = await _mediator.Send(new DeleteDocumentCommand(id));
                 if (!deleted)
                 {
                     return NotFound(new { message = $"Document with ID {id} not found." });
@@ -121,4 +123,3 @@ namespace SystemConfigApi.Controllers
         }
     }
 }
-

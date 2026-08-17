@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SystemConfigApi.Controllers;
 using SystemConfigApi.Data;
 using SystemConfigApi.DTOs;
+using SystemConfigApi.Features.IndividualAccess.Commands;
+using SystemConfigApi.Features.IndividualAccess.Queries;
 using SystemConfigApi.Models;
 using Xunit;
 
@@ -22,7 +22,7 @@ namespace SystemConfigApi.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetIndividualAccesses_ReturnsSuccessResult()
+        public async Task GetIndividualAccessesQuery_ReturnsSuccessResult()
         {
             using var context = GetInMemoryDbContext();
             context.IndividualAccesses.Add(new IndividualAccess
@@ -37,20 +37,17 @@ namespace SystemConfigApi.Tests.Controllers
             });
             await context.SaveChangesAsync();
 
-            var controller = new IndividualAccessController(context);
+            var handler = new GetIndividualAccessesQueryHandler(context);
+            var items = await handler.Handle(new GetIndividualAccessesQuery(), CancellationToken.None);
 
-            var result = await controller.GetIndividualAccesses();
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var items = Assert.IsAssignableFrom<IEnumerable<IndividualAccessResponseDto>>(okResult.Value);
             Assert.NotEmpty(items);
         }
 
         [Fact]
-        public async Task CreateIndividualAccess_ValidDto_SavesAccessRecord()
+        public async Task CreateIndividualAccessCommand_ValidDto_SavesAccessRecord()
         {
             using var context = GetInMemoryDbContext();
-            var controller = new IndividualAccessController(context);
+            var handler = new CreateIndividualAccessCommandHandler(context);
 
             var dto = new CreateIndividualAccessDto
             {
@@ -63,15 +60,13 @@ namespace SystemConfigApi.Tests.Controllers
                 WorkflowRole = "reviewer"
             };
 
-            var result = await controller.CreateIndividualAccess(dto);
+            var item = await handler.Handle(new CreateIndividualAccessCommand(dto), CancellationToken.None);
 
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var item = Assert.IsType<IndividualAccessResponseDto>(createdResult.Value);
             Assert.Equal("read_only", item.DmsAccessLevel);
         }
 
         [Fact]
-        public async Task DeleteIndividualAccess_ExistingId_RemovesRecord()
+        public async Task DeleteIndividualAccessCommand_ExistingId_RemovesRecord()
         {
             using var context = GetInMemoryDbContext();
             var record = new IndividualAccess
@@ -87,11 +82,10 @@ namespace SystemConfigApi.Tests.Controllers
             context.IndividualAccesses.Add(record);
             await context.SaveChangesAsync();
 
-            var controller = new IndividualAccessController(context);
+            var handler = new DeleteIndividualAccessCommandHandler(context);
+            var result = await handler.Handle(new DeleteIndividualAccessCommand(record.Id), CancellationToken.None);
 
-            var result = await controller.DeleteIndividualAccess(record.Id);
-
-            Assert.IsType<NoContentResult>(result);
+            Assert.True(result);
             Assert.Null(await context.IndividualAccesses.FindAsync(record.Id));
         }
     }

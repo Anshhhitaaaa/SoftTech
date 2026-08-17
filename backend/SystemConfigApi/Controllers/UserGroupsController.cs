@@ -1,6 +1,8 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SystemConfigApi.DTOs;
-using SystemConfigApi.Services;
+using SystemConfigApi.Features.UserGroups.Commands;
+using SystemConfigApi.Features.UserGroups.Queries;
 
 namespace SystemConfigApi.Controllers
 {
@@ -8,11 +10,11 @@ namespace SystemConfigApi.Controllers
     [Route("api/[controller]")]
     public class UserGroupsController : ControllerBase
     {
-        private readonly IUserGroupService _groupService;
+        private readonly IMediator _mediator;
 
-        public UserGroupsController(IUserGroupService groupService)
+        public UserGroupsController(IMediator mediator)
         {
-            _groupService = groupService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -20,7 +22,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _groupService.GetAllGroupsAsync();
+                var response = await _mediator.Send(new GetUserGroupsQuery());
                 return Ok(response);
             }
             catch (Exception ex)
@@ -34,7 +36,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var response = await _groupService.GetGroupByIdAsync(id);
+                var response = await _mediator.Send(new GetUserGroupByIdQuery(id));
                 if (response == null)
                 {
                     return NotFound(new { message = $"User Group with ID {id} not found." });
@@ -57,7 +59,7 @@ namespace SystemConfigApi.Controllers
 
             try
             {
-                var result = await _groupService.CreateGroupAsync(dto);
+                var result = await _mediator.Send(new CreateUserGroupCommand(dto));
                 return CreatedAtAction(nameof(GetUserGroup), new { id = result.Id }, result);
             }
             catch (Exception ex)
@@ -71,7 +73,7 @@ namespace SystemConfigApi.Controllers
         {
             try
             {
-                var deleted = await _groupService.DeleteGroupAsync(id);
+                var deleted = await _mediator.Send(new DeleteUserGroupCommand(id));
                 if (!deleted)
                 {
                     return NotFound(new { message = $"User Group with ID {id} not found." });
@@ -85,4 +87,3 @@ namespace SystemConfigApi.Controllers
         }
     }
 }
-
