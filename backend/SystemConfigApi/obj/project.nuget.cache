@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "3HsBz9Xx2Es=",
+  "dgSpecHash": "vNwCcvufYn8=",
   "success": true,
-  "projectFilePath": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
+  "projectFilePath": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\mediatr\\12.4.1\\mediatr.12.4.1.nupkg.sha512",

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, UserCheck, Shield, FileText, FolderCheck, User, LogIn, ChevronDown, Award, LogOut, UserPlus } from 'lucide-react';
+import { Users, UserCheck, Shield, FileText, FolderCheck, User, LogIn, ChevronDown, Award, LogOut, UserPlus, ShieldCheck } from 'lucide-react';
 
 export default function HeaderTabNav({
   activeTab,
@@ -8,7 +8,8 @@ export default function HeaderTabNav({
   individualCount = 0,
   documentCount = 0,
   currentUser,
-  onOpenLoginModal
+  onOpenLoginModal,
+  onOpenAdminPortal
 }) {
   const isAuthenticated = Boolean(currentUser && currentUser.id);
   const userRole = currentUser?.role || "Normal User";
@@ -35,6 +36,14 @@ export default function HeaderTabNav({
 
           {/* User Profile & Login / Signup Switcher */}
           <div className="flex items-center space-x-3">
+            <button
+              onClick={onOpenAdminPortal}
+              className="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-100 text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 border border-slate-700"
+            >
+              <ShieldCheck className="w-4 h-4 text-indigo-400" />
+              <span>Admin Analytics Portal</span>
+            </button>
+
             {isAuthenticated ? (
               <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 flex items-center space-x-3 shadow-2xs">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white font-extrabold flex items-center justify-center text-sm shadow-md shadow-indigo-200">

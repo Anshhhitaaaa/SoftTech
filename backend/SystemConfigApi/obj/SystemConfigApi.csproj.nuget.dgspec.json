@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {}
+    "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {}
   },
   "projects": {
-    "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {
+    "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
+        "projectUniqueName": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
         "projectName": "SystemConfigApi",
-        "projectPath": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
+        "projectPath": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\SystemConfigApi.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "d:\\SoftTech\\App_1\\backend\\SystemConfigApi\\obj\\",
+        "outputPath": "D:\\SoftTech\\App_1\\backend\\SystemConfigApi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

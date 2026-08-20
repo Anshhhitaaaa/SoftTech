@@ -10,6 +10,7 @@ import DocumentEditor from './components/DocumentEditor';
 import WorkflowReviewModal from './components/WorkflowReviewModal';
 import DocumentsRepository from './components/DocumentsRepository';
 import LoginModal from './components/LoginModal';
+import AdminApp from './components/admin/AdminApp';
 
 import { useAuth } from './hooks/useAuth';
 import { useSystemConfigData } from './hooks/useSystemConfigData';
@@ -24,6 +25,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState('user-groups'); // 'user-groups' | 'individual-access' | 'doc-editor' | 'documents-repo'
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Custom Hooks
   const {
@@ -71,6 +73,10 @@ export default function App() {
   const [isIndividualModalOpen, setIsIndividualModalOpen] = useState(false);
   const [masterDetailItem, setMasterDetailItem] = useState(null);
   const [isMasterDetailOpen, setIsMasterDetailOpen] = useState(false);
+
+  if (isAdminMode) {
+    return <AdminApp onExitAdminMode={() => setIsAdminMode(false)} />;
+  }
 
   const handleOpenMasterDetail = (item) => {
     setMasterDetailItem(item);
@@ -126,6 +132,7 @@ export default function App() {
         documentCount={approvedDocuments.length}
         currentUser={currentUser}
         onOpenLoginModal={openLoginModal}
+        onOpenAdminPortal={() => setIsAdminMode(true)}
       />
 
       {/* Role-Based Workflow Banners */}
