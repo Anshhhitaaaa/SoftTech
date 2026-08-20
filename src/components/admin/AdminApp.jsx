@@ -106,15 +106,21 @@ export default function AdminApp({ onExitAdminMode }) {
     }
   }, [adminUser]);
 
-  // Fetch live analytics data from FastAPI database view whenever filters or granularity changes
+  // Fetch live analytics data from FastAPI database view whenever filters change
   useEffect(() => {
     if (adminUser) {
       fetchKPIs(filters).then((res) => res && setKpis(res));
-      fetchTrends(granularity, filters).then((res) => res && setTrends(res));
       fetchByType(filters).then((res) => res && setByType(res));
       fetchByUser(filters).then((res) => res && setByUser(res));
     }
-  }, [adminUser, filters, granularity]);
+  }, [adminUser, filters]);
+
+  // Dedicated instant trend update when switching granularity (Weekly, Monthly, Yearly)
+  useEffect(() => {
+    if (adminUser) {
+      fetchTrends(granularity, filters).then((res) => res && setTrends(res));
+    }
+  }, [adminUser, granularity, filters]);
 
   const handleLoginSuccess = (user) => {
     setAdminUser(user);

@@ -111,10 +111,10 @@ export default function AdminDashboard({ kpis, trends, byType, byUser, granulari
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium capitalize transition-all duration-300 ${
                   granularity === g
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 scale-105 font-bold'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                 }`}
               >
                 {g} Trends
@@ -123,46 +123,79 @@ export default function AdminDashboard({ kpis, trends, byType, byUser, granulari
           </div>
         </div>
 
-        {/* Dynamic SVG / CSS Bar Chart */}
+        {/* Dynamic Animated Bar Chart with Staggered Cascading Wave Transition */}
         {trends && trends.length > 0 ? (
-          <div className="pt-4">
-            <div className="h-64 flex items-end gap-2 sm:gap-3 px-2 border-b border-slate-800">
+          <div key={`${granularity}-${trends.length}`} className="pt-6 animate-fadeIn">
+            <div className="h-64 flex items-end gap-2 sm:gap-4 px-3 border-b border-slate-800/80 pb-2 relative">
+              {/* Background Grid Lines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+                <div className="border-b border-dashed border-slate-700 w-full" />
+                <div className="border-b border-dashed border-slate-700 w-full" />
+                <div className="border-b border-dashed border-slate-700 w-full" />
+                <div className="border-b border-dashed border-slate-700 w-full" />
+              </div>
+
               {trends.map((item, idx) => {
-                const heightPct = Math.max((item.document_count / maxTrend) * 100, 6);
+                const heightPct = Math.max((item.document_count / maxTrend) * 100, 8);
                 const isHovered = hoveredTrend === idx;
 
                 return (
                   <div
-                    key={idx}
+                    key={item.period_label || idx}
                     onMouseEnter={() => setHoveredTrend(idx)}
                     onMouseLeave={() => setHoveredTrend(null)}
-                    className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative"
+                    className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative z-10"
                   >
-                    {/* Tooltip */}
+                    {/* Top Value Pill */}
+                    <div
+                      style={{ transitionDelay: `${idx * 30}ms` }}
+                      className={`mb-2 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono transition-all duration-500 transform ${
+                        isHovered
+                          ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/50 scale-110 -translate-y-1'
+                          : 'bg-slate-800/90 text-indigo-300 border border-slate-700/80 group-hover:bg-slate-700'
+                      }`}
+                    >
+                      {item.document_count}
+                    </div>
+
+                    {/* Tooltip on Hover */}
                     {isHovered && (
-                      <div className="absolute -top-12 z-20 px-3 py-1.5 bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-lg shadow-xl whitespace-nowrap animate-fadeIn">
-                        <span className="font-semibold">{item.period_label}:</span> {item.document_count} docs
+                      <div className="absolute -top-10 z-30 px-3 py-1.5 bg-slate-900 border border-indigo-500/40 text-slate-100 text-xs rounded-xl shadow-2xl whitespace-nowrap animate-modal">
+                        <span className="font-semibold text-indigo-400">{item.period_label}:</span> {item.document_count} total documents
                       </div>
                     )}
 
-                    {/* Bar */}
-                    <div
-                      style={{ height: `${heightPct}%` }}
-                      className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 ${
-                        isHovered
-                          ? 'bg-gradient-to-t from-indigo-500 to-purple-400 shadow-lg shadow-indigo-500/50'
-                          : 'bg-gradient-to-t from-indigo-600/70 to-indigo-500/90 group-hover:from-indigo-500 group-hover:to-indigo-400'
-                      }`}
-                    />
+                    {/* Animated Bar Column with Staggered Cascade Delay */}
+                    <div className="w-full max-w-[44px] h-full flex items-end relative">
+                      <div
+                        style={{
+                          height: `${heightPct}%`,
+                          transitionDelay: `${idx * 40}ms`
+                        }}
+                        className={`w-full rounded-t-xl transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) transform origin-bottom group-hover:scale-y-105 ${
+                          isHovered
+                            ? 'bg-gradient-to-t from-indigo-600 via-indigo-500 to-purple-400 shadow-xl shadow-indigo-500/40'
+                            : 'bg-gradient-to-t from-indigo-700/80 via-indigo-600/90 to-purple-600/80 group-hover:from-indigo-600 group-hover:to-purple-500'
+                        }`}
+                      >
+                        {/* Shimmer Light Reflection on Top of Bar */}
+                        <div className="h-1.5 w-full bg-white/20 rounded-t-xl" />
+                      </div>
+                    </div>
                   </div>
                 );
               })}
             </div>
 
             {/* X-Axis Labels */}
-            <div className="flex justify-between gap-1 mt-3 px-2 text-[10px] text-slate-400 font-mono overflow-x-auto">
+            <div className="flex justify-between gap-2 mt-4 px-3 text-[11px] text-slate-400 font-mono font-medium">
               {trends.map((item, idx) => (
-                <span key={idx} className="flex-1 text-center truncate">
+                <span
+                  key={idx}
+                  className={`flex-1 text-center truncate transition-colors duration-300 ${
+                    hoveredTrend === idx ? 'text-indigo-300 font-bold' : ''
+                  }`}
+                >
                   {item.period_label}
                 </span>
               ))}
