@@ -15,8 +15,12 @@ class SQLGenerator:
         if not group_by_cols:
             group_by_cols = ["author_name"]
 
-        select_clause = ", ".join(group_by_cols) + ", COUNT(document_id) AS document_count"
-        group_clause = ", ".join(group_by_cols)
+        select_cols = list(group_by_cols)
+        if "created_month" in select_cols and "created_year" not in select_cols:
+            select_cols.insert(0, "created_year")
+
+        select_clause = ", ".join(select_cols) + ", COUNT(document_id) AS document_count"
+        group_clause = ", ".join(select_cols)
         
         where_conditions = []
         params = []
@@ -51,12 +55,19 @@ class SQLGenerator:
 
         where_clause = f" WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
 
+        # Chronological ordering for time-series, count ranking for categorical dimensions
+        is_time_dimension = any(c in select_cols for c in ["created_month", "created_year", "created_week"])
+        if is_time_dimension:
+            order_clause = "ORDER BY " + ", ".join(f"{col} ASC" for col in select_cols)
+        else:
+            order_clause = "ORDER BY document_count DESC"
+
         sql = (
             f"SELECT {select_clause} "
             f"FROM {view_name}"
             f"{where_clause} "
             f"GROUP BY {group_clause} "
-            f"ORDER BY document_count DESC "
+            f"{order_clause} "
             f"LIMIT 100;"
         )
 

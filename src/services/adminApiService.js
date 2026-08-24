@@ -301,6 +301,87 @@ export async function fetchByUser(filters = {}) {
   }
 }
 
+export async function fetchDrillDownDocuments(dimensionType, dimensionValue, filterContext = {}) {
+  try {
+    const query = buildQueryParams(filterContext, { dimension_type: dimensionType, dimension_value: dimensionValue });
+    const res = await fetchWithTimeout(`${API_BASE_URL}/analytics/drilldown${query}`, {
+      headers: getAuthHeaders()
+    }, 300);
+    if (!res.ok) throw new Error('Failed to fetch drilldown documents from database');
+    return await res.json();
+  } catch (err) {
+    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Filter mock documents matching dimension
+    const matched = MOCK_DOCUMENTS.filter((doc) => {
+      if (dimensionType === 'created_month' || dimensionType === 'month_name') {
+        const mNum = doc.created_month || 1;
+        const yearNum = doc.created_year || 2026;
+        const mStr = `${yearNum}-${mNum < 10 ? '0' : ''}${mNum}`;
+        const nameStr = monthNames[mNum] || '';
+        const targetStr = String(dimensionValue || '').toLowerCase();
+
+        const yearMatch = targetStr.match(/202[0-9]/);
+        const targetYear = yearMatch ? parseInt(yearMatch[0], 10) : null;
+        
+        let targetMonth = null;
+        for (let m = 1; m <= 12; m++) {
+          if (targetStr.includes(monthNames[m].toLowerCase()) || targetStr.includes(`${yearNum}-${m < 10 ? '0' : ''}${m}`)) {
+            targetMonth = m;
+            break;
+          }
+        }
+
+        if (targetYear && targetMonth) {
+          return doc.created_year === targetYear && doc.created_month === targetMonth;
+        }
+        if (targetMonth) {
+          return doc.created_month === targetMonth;
+        }
+        return mStr.toLowerCase().includes(targetStr) || 
+               nameStr.toLowerCase().includes(targetStr) || 
+               String(mNum) === targetStr;
+      }
+
+      if (dimensionType === 'author_name' || dimensionType === 'user') {
+        return doc.author_name.toLowerCase().includes(String(dimensionValue).toLowerCase());
+      }
+
+      if (dimensionType === 'department_name' || dimensionType === 'department') {
+        return doc.department_name.toLowerCase().includes(String(dimensionValue).toLowerCase());
+      }
+
+      if (dimensionType === 'category' || dimensionType === 'type') {
+        return doc.category.toLowerCase().includes(String(dimensionValue).toLowerCase());
+      }
+
+      if (dimensionType === 'status') {
+        return doc.status.toLowerCase().includes(String(dimensionValue).toLowerCase());
+      }
+
+      return true;
+    });
+
+    return matched.map((doc) => ({
+      id: doc.id,
+      title: doc.title || `${doc.category} - #${1000 + doc.id}`,
+      category: doc.category,
+      status: doc.status,
+      author_name: doc.author_name,
+      department_name: doc.department_name,
+      created_at: doc.created_at,
+      content_html: `<div class="p-4 space-y-3">
+        <h4 class="font-bold text-slate-100 text-lg">${doc.category} - #${1000 + doc.id}</h4>
+        <div class="text-xs text-slate-400">Created by <strong class="text-indigo-300">${doc.author_name}</strong> (${doc.department_name}) on ${doc.created_at}</div>
+        <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 text-sm">
+          This document contains official executive data for <strong>${doc.category}</strong>. Current Workflow Status is <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-xs font-bold">${doc.status}</span>.
+        </div>
+      </div>`,
+      reviewer_notes: `Compliance verified for ${doc.department_name}. Workflow status set to ${doc.status}.`
+    }));
+  }
+}
+
 export async function executeNLQuery(question) {
   try {
     const res = await fetchWithTimeout(`${API_BASE_URL}/nl-query`, {
@@ -323,7 +404,7 @@ export async function executeNLQuery(question) {
     if (qLower.includes("department")) groupBy = ["department_name"];
     else if (qLower.includes("status")) groupBy = ["status"];
     else if (qLower.includes("category") || qLower.includes("type")) groupBy = ["category"];
-    else if (qLower.includes("monthly") || qLower.includes("trend")) groupBy = ["created_month"];
+    else if (qLower.includes("monthly") || qLower.includes("trend") || qLower.includes("month")) groupBy = ["created_month"];
 
     let statusFilter = null;
     if (qLower.includes("approved")) statusFilter = "Approved";
@@ -340,29 +421,51 @@ export async function executeNLQuery(question) {
       date_preset: period === "previous_calendar_year" ? "last_year" : period === "this_year" ? "this_year" : "all"
     });
 
+    const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const counts = {};
-    const groupField = groupBy[0] === "author_name" ? "author_name" : groupBy[0] === "department_name" ? "department_name" : groupBy[0] === "category" ? "category" : "status";
+    const groupField = groupBy[0];
 
     filtered.forEach(doc => {
-      const val = doc[groupField] || "Other";
+      let val = doc[groupField];
+      if (groupField === 'created_month') {
+        const mNum = doc.created_month || 1;
+        const year = doc.created_year || 2026;
+        val = `${year}-${mNum < 10 ? '0' : ''}${mNum} (${monthNames[mNum] || 'Month ' + mNum})`;
+      } else if (!val) {
+        val = 'Other';
+      }
       counts[val] = (counts[val] || 0) + 1;
     });
 
-    const results = Object.entries(counts).map(([key, count]) => ({
-      [groupField]: key,
-      document_count: count
-    })).sort((a, b) => b.document_count - a.document_count);
+    const labelKey = groupField === 'created_month' ? 'month_name' : groupField;
+    const results = Object.entries(counts).map(([key, count]) => {
+      const item = {
+        [labelKey]: key,
+        document_count: count
+      };
+      if (groupField === 'created_month') {
+        item.created_month = parseInt(key.split('-')[1] || '1', 10);
+        item.created_year = parseInt(key.split('-')[0] || '2026', 10);
+      }
+      return item;
+    }).sort((a, b) => {
+      if (groupField === 'created_month') {
+        return a[labelKey].localeCompare(b[labelKey]);
+      }
+      return b.document_count - a.document_count;
+    });
 
-    const generatedSql = `SELECT ${groupBy.join(', ')}, COUNT(document_id) AS document_count FROM vw_admin_analytics_documents ${
-      period === "previous_calendar_year" ? "WHERE created_year = 2025 " : ""
-    }${statusFilter ? `AND status = '${statusFilter}' ` : ""}${deptFilter ? `AND department_name = '${deptFilter}' ` : ""}GROUP BY ${groupBy.join(', ')} ORDER BY document_count DESC LIMIT 100;`;
+    const selectCols = groupBy.includes('created_month') ? ['created_year', 'created_month'] : groupBy;
+    const generatedSql = `SELECT ${selectCols.join(', ')}, COUNT(document_id) AS document_count FROM vw_admin_analytics_documents ${
+      period === "previous_calendar_year" ? "WHERE created_year = 2025 " : period === "this_year" ? "WHERE created_year = 2026 " : ""
+    }${statusFilter ? `AND status = '${statusFilter}' ` : ""}${deptFilter ? `AND department_name = '${deptFilter}' ` : ""}GROUP BY ${selectCols.join(', ')} ORDER BY ${groupBy.includes('created_month') ? 'created_year ASC, created_month ASC' : 'document_count DESC'} LIMIT 100;`;
 
     return {
       question,
       interpretation: {
         period,
         metric: "COUNT",
-        group_by: groupBy,
+        group_by: selectCols,
         filters: { status: statusFilter, department_name: deptFilter },
         target_view: "vw_admin_analytics_documents"
       },
@@ -372,7 +475,7 @@ export async function executeNLQuery(question) {
         status: "APPROVED",
         allowlist_check: "Passed: Single SELECT against approved view 'vw_admin_analytics_documents'."
       },
-      results: results.length > 0 ? results : [{ [groupField]: "Sample User", document_count: 10 }],
+      results: results.length > 0 ? results : [{ [labelKey]: "2026-01 (Jan)", created_year: 2026, created_month: 1, document_count: 10 }],
       recommended_chart: groupBy.includes("created_month") ? "line" : groupBy.includes("category") ? "pie" : "bar"
     };
   }

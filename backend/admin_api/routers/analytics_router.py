@@ -94,3 +94,28 @@ def get_by_user(
         date_from=date_from,
         date_to=date_to
     )
+
+@router.get("/drilldown")
+def get_drilldown_documents(
+    dimension_type: str = Query(...),
+    dimension_value: str = Query(...),
+    user_id: Optional[int] = Query(None),
+    category: Optional[str] = Query(None),
+    department_name: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    date_preset: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    current_admin: dict = Depends(get_current_admin)
+):
+    return analytics_service.get_drilldown_documents(
+        dimension_type=dimension_type,
+        dimension_value=dimension_value,
+        user_id=user_id,
+        category=category,
+        department_name=department_name,
+        status=status,
+        date_preset=date_preset,
+        date_from=date_from,
+        date_to=date_to
+    )

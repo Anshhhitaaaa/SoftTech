@@ -169,4 +169,63 @@ class AnalyticsService:
         """
         return execute_readonly_query(query, tuple(params))
 
+    def get_drilldown_documents(self, dimension_type: str, dimension_value: str, **kwargs) -> List[Dict[str, Any]]:
+        where_clause, params = self._build_filter_conditions(**kwargs)
+        
+        extra_cond = []
+        if dimension_type in ["created_month", "month_name"]:
+            val_lower = str(dimension_value).lower()
+            month_names = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+            target_month = None
+            for idx, m in enumerate(month_names, start=1):
+                if m in val_lower:
+                    target_month = idx
+                    break
+            
+            import re
+            year_match = re.search(r'\b(202[0-9])\b', val_lower)
+            target_year = int(year_match.group(1)) if year_match else None
+
+            if target_year and target_month:
+                extra_cond.append("created_year = ? AND created_month = ?")
+                params.extend([target_year, target_month])
+            elif target_month:
+                extra_cond.append("created_month = ?")
+                params.append(target_month)
+            else:
+                extra_cond.append("(created_year || '-' || printf('%02d', created_month) LIKE ?)")
+                params.append(f"%{dimension_value}%")
+        elif dimension_type in ["author_name", "user"]:
+            extra_cond.append("author_name LIKE ?")
+            params.append(f"%{dimension_value}%")
+        elif dimension_type in ["department_name", "department"]:
+            extra_cond.append("department_name LIKE ?")
+            params.append(f"%{dimension_value}%")
+        elif dimension_type in ["category", "type"]:
+            extra_cond.append("category LIKE ?")
+            params.append(f"%{dimension_value}%")
+        elif dimension_type == "status":
+            extra_cond.append("status LIKE ?")
+            params.append(f"%{dimension_value}%")
+
+        if extra_cond:
+            connector = " AND " if where_clause else " WHERE "
+            where_clause += f"{connector}{' AND '.join(extra_cond)}"
+
+        query = f"""
+        SELECT
+            document_id AS id,
+            title,
+            category,
+            status,
+            author_name,
+            department_name,
+            created_at
+        FROM vw_admin_analytics_documents
+        {where_clause}
+        ORDER BY created_at DESC
+        LIMIT 100;
+        """
+        return execute_readonly_query(query, tuple(params))
+
 analytics_service = AnalyticsService()

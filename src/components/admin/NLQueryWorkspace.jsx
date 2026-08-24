@@ -1,24 +1,36 @@
-import React, { useState } from 'react';
-import { Sparkles, Send, ShieldCheck, Database, Code, CheckCircle, Table, BarChart2, Download, AlertTriangle, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, Search, ShieldCheck, Database, Code, CheckCircle, Table, BarChart2, Download, AlertTriangle, ArrowRight, FileText, Eye } from 'lucide-react';
 import { executeNLQuery } from '../../services/adminApiService';
+import DocumentDrillDownModal from './DocumentDrillDownModal';
 
 export default function NLQueryWorkspace() {
-  const [question, setQuestion] = useState("Give me last year's documents uploaded by each user.");
+  const [question, setQuestion] = useState("Monthly trend of documents created in 2026.");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
 
+  // Drill Down Modal state
+  const [drillDownState, setDrillDownState] = useState({
+    isOpen: false,
+    dimensionType: '',
+    dimensionValue: ''
+  });
+
   const samplePrompts = [
+    "Monthly trend of documents created in 2026.",
     "Give me last year's documents uploaded by each user.",
     "Show approved documents in IT department by status.",
-    "Monthly trend of documents created in 2026.",
     "Total documents by department and category.",
     "Show pending approval documents by author."
   ];
 
-  const handleQuerySubmit = async (queryText) => {
-    const promptToRun = queryText || question;
-    if (!promptToRun.trim()) return;
+  useEffect(() => {
+    handleQuerySubmit("Monthly trend of documents created in 2026.");
+  }, []);
+
+  const handleQuerySubmit = async (queryArg) => {
+    const promptToRun = typeof queryArg === 'string' && queryArg.trim() ? queryArg : question;
+    if (!promptToRun || typeof promptToRun !== 'string' || !promptToRun.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -27,7 +39,6 @@ export default function NLQueryWorkspace() {
       const apiResult = await executeNLQuery(promptToRun);
       setResponse(apiResult);
     } catch (err) {
-      // Client-side fallback if FastAPI server is currently offline
       const qLower = promptToRun.toLowerCase();
       let period = "all_time";
       if (qLower.includes("last year")) period = "previous_calendar_year";
@@ -37,7 +48,7 @@ export default function NLQueryWorkspace() {
       if (qLower.includes("department")) groupBy = ["department_name"];
       else if (qLower.includes("status")) groupBy = ["status"];
       else if (qLower.includes("category") || qLower.includes("type")) groupBy = ["category"];
-      else if (qLower.includes("monthly") || qLower.includes("trend")) groupBy = ["created_month"];
+      else if (qLower.includes("monthly") || qLower.includes("trend") || qLower.includes("month")) groupBy = ["created_month"];
 
       let statusFilter = null;
       if (qLower.includes("approved")) statusFilter = "Approved";
@@ -52,12 +63,11 @@ export default function NLQueryWorkspace() {
         period === "previous_calendar_year" ? "WHERE created_year = 2025 " : ""
       }${statusFilter ? `AND status = '${statusFilter}' ` : ""}${deptFilter ? `AND department_name = '${deptFilter}' ` : ""}GROUP BY ${groupBy.join(', ')} ORDER BY document_count DESC LIMIT 100;`;
 
+      const labelKey = groupBy[0] === 'created_month' ? 'month_name' : groupBy[0];
       let mockData = [
-        { author_name: "Rahul Sharma", document_count: 28 },
-        { author_name: "Sneha Reddy", document_count: 22 },
-        { author_name: "Priya Patel", document_count: 19 },
-        { author_name: "Amit Verma", document_count: 15 },
-        { author_name: "Vikram Malhotra", document_count: 12 }
+        { [labelKey]: groupBy[0] === 'created_month' ? '2026-01 (Jan)' : 'Rahul Sharma', document_count: 28 },
+        { [labelKey]: groupBy[0] === 'created_month' ? '2026-02 (Feb)' : 'Sneha Reddy', document_count: 22 },
+        { [labelKey]: groupBy[0] === 'created_month' ? '2026-03 (Mar)' : 'Priya Patel', document_count: 19 }
       ];
 
       setResponse({
@@ -83,6 +93,47 @@ export default function NLQueryWorkspace() {
     }
   };
 
+  const getItemLabel = (row) => {
+    if (!row) return 'Unknown';
+    if (row.month_name) return row.month_name;
+    if (row.created_month !== undefined && row.created_month !== null) {
+      const monthNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const mNum = Number(row.created_month);
+      const mName = monthNames[mNum] || `Month ${row.created_month}`;
+      const yStr = row.created_year ? `${row.created_year}` : '';
+      return yStr ? `${mName} ${yStr}` : mName;
+    }
+    if (row.author_name) return row.author_name;
+    if (row.department_name) return row.department_name;
+    if (row.category) return row.category;
+    if (row.status) return row.status;
+    if (row.created_year) return `Year ${row.created_year}`;
+    
+    const key = Object.keys(row).find(k => k !== 'document_count' && k !== 'count');
+    return key ? String(row[key]) : 'Item';
+  };
+
+  const getDimensionType = (row) => {
+    if (!row) return 'author_name';
+    if (row.month_name || row.created_month) return 'created_month';
+    if (row.author_name) return 'author_name';
+    if (row.department_name) return 'department_name';
+    if (row.category) return 'category';
+    if (row.status) return 'status';
+    const key = Object.keys(row).find(k => k !== 'document_count' && k !== 'count');
+    return key || 'author_name';
+  };
+
+  const handleOpenDrillDown = (row) => {
+    const label = getItemLabel(row);
+    const dimType = getDimensionType(row);
+    setDrillDownState({
+      isOpen: true,
+      dimensionType: dimType,
+      dimensionValue: label
+    });
+  };
+
   const maxVal = response?.results ? Math.max(...response.results.map((r) => r.document_count || 1), 1) : 1;
 
   return (
@@ -101,32 +152,27 @@ export default function NLQueryWorkspace() {
             Interprets questions, identifies metrics, dimensions & filters, generates controlled SQL against approved analytics views, and executes safely.
           </p>
 
-          {/* Prompt Input Form */}
+          {/* Clean Prompt Search Bar (No Execute Button) */}
           <div className="pt-2">
-            <div className="relative flex items-center">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleQuerySubmit(question);
+              }}
+              className="relative flex items-center"
+            >
+              <Search className="w-5 h-5 text-indigo-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="e.g. Give me last year's documents uploaded by each user."
-                className="w-full bg-slate-900 border-2 border-indigo-500/40 focus:border-indigo-500 rounded-2xl pl-5 pr-32 py-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 shadow-2xl transition"
-                onKeyDown={(e) => e.key === 'Enter' && handleQuerySubmit()}
+                placeholder="Type your question and press Enter... (e.g. Monthly trend of documents created in 2026)"
+                className="w-full bg-slate-900 border-2 border-indigo-500/40 focus:border-indigo-500 rounded-2xl pl-12 pr-12 py-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 shadow-2xl transition font-medium"
               />
-              <button
-                onClick={() => handleQuerySubmit()}
-                disabled={loading}
-                className="absolute right-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
-              >
-                {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>Execute Query</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-            </div>
+              {loading && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              )}
+            </form>
           </div>
 
           {/* Sample Suggestion Pills */}
@@ -148,7 +194,7 @@ export default function NLQueryWorkspace() {
         </div>
       </div>
 
-      {/* Query Execution Step Trace Visualizer */}
+      {/* Query Execution Step Trace & Visual Analytics rendered inline */}
       {response && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -208,26 +254,50 @@ export default function NLQueryWorkspace() {
             </div>
 
             {/* Chart View */}
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Visual Analytics
-              </span>
-              <div className="space-y-2 pt-2">
+            <div className="p-5 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Visual Analytics Breakdown (Click Row or Button to Inspect Uploaded Files)
+                </span>
+              </div>
+
+              <div className="space-y-3 pt-1">
                 {response.results.map((row, idx) => {
-                  const label = row.author_name || row.department_name || row.category || row.created_month || `Row #${idx + 1}`;
+                  const label = getItemLabel(row);
                   const count = row.document_count || 0;
                   const pct = Math.max((count / maxVal) * 100, 8);
 
                   return (
-                    <div key={idx} className="space-y-1">
+                    <div
+                      key={idx}
+                      onClick={() => handleOpenDrillDown(row)}
+                      className="group p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-800/60 transition cursor-pointer space-y-2"
+                    >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-200 font-medium">{label}</span>
-                        <span className="text-indigo-400 font-mono font-bold">{count} documents</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-100 group-hover:text-indigo-300 transition text-sm">
+                            {label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-indigo-400 font-mono font-bold">{count} documents</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDrillDown(row);
+                            }}
+                            className="px-2.5 py-1 bg-indigo-600/80 group-hover:bg-indigo-500 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 transition shadow-sm"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Drill Down & View Files</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden">
+
+                      <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                         <div
                           style={{ width: `${pct}%` }}
-                          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500 group-hover:brightness-110"
                         />
                       </div>
                     </div>
@@ -236,26 +306,36 @@ export default function NLQueryWorkspace() {
               </div>
             </div>
 
-            {/* Interactive Data Table */}
-            <div className="overflow-x-auto border border-slate-800 rounded-xl">
+            {/* Interactive Data Table with Drill-Down Actions */}
+            <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/60">
               <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-800/80 text-slate-200 uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-800/80 text-slate-200 uppercase tracking-wider text-[10px] border-b border-slate-800">
                   <tr>
                     {Object.keys(response.results[0] || {}).map((col) => (
-                      <th key={col} className="px-4 py-3 font-semibold border-b border-slate-700">
+                      <th key={col} className="px-4 py-3 font-semibold">
                         {col.replace('_', ' ')}
                       </th>
                     ))}
+                    <th className="px-4 py-3 font-semibold text-right">Inspect Files</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {response.results.map((row, rIdx) => (
-                    <tr key={rIdx} className="hover:bg-slate-800/40 transition">
-                      {Object.values(row).map((val, cIdx) => (
-                        <td key={cIdx} className="px-4 py-2.5 font-mono text-slate-300">
-                          {String(val)}
+                    <tr key={rIdx} className="hover:bg-slate-800/40 transition group">
+                      {Object.entries(row).map(([k, val], cIdx) => (
+                        <td key={cIdx} className="px-4 py-3 font-mono text-slate-200 font-medium">
+                          {k === 'month_name' || k === 'created_month' ? getItemLabel(row) : String(val)}
                         </td>
                       ))}
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => handleOpenDrillDown(row)}
+                          className="px-3 py-1 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition border border-slate-700"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-400 group-hover:text-white" />
+                          <span>Drill Down</span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -264,6 +344,15 @@ export default function NLQueryWorkspace() {
           </div>
         </div>
       )}
+
+      {/* Drill-Down Inspector Modal (Opens when clicking any month row or drilldown button) */}
+      <DocumentDrillDownModal
+        isOpen={drillDownState.isOpen}
+        onClose={() => setDrillDownState({ isOpen: false, dimensionType: '', dimensionValue: '' })}
+        dimensionType={drillDownState.dimensionType}
+        dimensionValue={drillDownState.dimensionValue}
+        filterContext={response?.interpretation?.filters || {}}
+      />
     </div>
   );
 }
