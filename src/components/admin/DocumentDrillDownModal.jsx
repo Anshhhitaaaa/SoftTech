@@ -12,7 +12,15 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
   useEffect(() => {
     if (isOpen && dimensionValue) {
       setLoading(true);
-      setStatusFilter('all');
+      
+      let initialStatus = 'all';
+      if (dimensionType === 'status') {
+        const valLower = String(dimensionValue).toLowerCase();
+        if (valLower.includes('approved')) initialStatus = 'approved';
+        else if (valLower.includes('pending')) initialStatus = 'pending';
+        else if (valLower.includes('draft') || valLower.includes('returned')) initialStatus = 'draft';
+      }
+      setStatusFilter(initialStatus);
       setSearchQuery('');
       fetchDrillDownDocuments(dimensionType, dimensionValue, filterContext)
         .then((res) => {
@@ -235,23 +243,45 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
                         {doc.title}
                       </td>
                       <td className="px-4 py-3 font-sans">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px]">
+                        <span
+                          onClick={() => setSearchQuery(doc.category)}
+                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] cursor-pointer transition"
+                          title="Click to filter by this category"
+                        >
                           {doc.category}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-sans">
-                        <div className="text-slate-200 font-medium">{doc.author_name}</div>
-                        <div className="text-[10px] text-slate-400">{doc.department_name}</div>
+                        <div
+                          onClick={() => setSearchQuery(doc.author_name)}
+                          className="text-slate-200 hover:text-indigo-300 font-medium cursor-pointer transition"
+                          title="Click to search by author"
+                        >
+                          {doc.author_name}
+                        </div>
+                        <div
+                          onClick={() => setSearchQuery(doc.department_name)}
+                          className="text-[10px] text-slate-400 hover:text-indigo-300 cursor-pointer transition"
+                          title="Click to search by department"
+                        >
+                          {doc.department_name}
+                        </div>
                       </td>
                       <td className="px-4 py-3 font-sans">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          onClick={() => {
+                            if (doc.status === 'Approved') setStatusFilter('approved');
+                            else if (doc.status.startsWith('Pending')) setStatusFilter('pending');
+                            else setStatusFilter('draft');
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer hover:scale-105 transition ${
                             doc.status === 'Approved'
                               ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                               : doc.status.startsWith('Pending')
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                               : 'bg-slate-700/50 text-slate-300 border border-slate-600/40'
                           }`}
+                          title="Click to filter by this status"
                         >
                           {doc.status}
                         </span>
