@@ -7,10 +7,13 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'approved' | 'pending' | 'draft'
 
   useEffect(() => {
     if (isOpen && dimensionValue) {
       setLoading(true);
+      setStatusFilter('all');
+      setSearchQuery('');
       fetchDrillDownDocuments(dimensionType, dimensionValue, filterContext)
         .then((res) => {
           setDocuments(res || []);
@@ -22,7 +25,18 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
 
   if (!isOpen) return null;
 
+  const totalCount = documents.length;
+  const approvedCount = documents.filter((d) => d.status === 'Approved').length;
+  const pendingCount = documents.filter((d) => d.status.startsWith('Pending')).length;
+  const draftCount = documents.filter((d) => d.status === 'Draft' || d.status.startsWith('Returned')).length;
+
   const filteredDocs = documents.filter((doc) => {
+    // 1. KPI Status Filter
+    if (statusFilter === 'approved' && doc.status !== 'Approved') return false;
+    if (statusFilter === 'pending' && !doc.status.startsWith('Pending')) return false;
+    if (statusFilter === 'draft' && doc.status !== 'Draft' && !doc.status.startsWith('Returned')) return false;
+
+    // 2. Search Query Filter
     if (!searchQuery.trim()) return true;
     const term = searchQuery.toLowerCase();
     return (
@@ -33,11 +47,6 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
       doc.status?.toLowerCase().includes(term)
     );
   });
-
-  const totalCount = documents.length;
-  const approvedCount = documents.filter((d) => d.status === 'Approved').length;
-  const pendingCount = documents.filter((d) => d.status.startsWith('Pending')).length;
-  const draftCount = documents.filter((d) => d.status === 'Draft' || d.status.startsWith('Returned')).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
@@ -62,7 +71,7 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Drill-down breakdown of individual document records uploaded for this analytical slice.
+                Click any summary card below to filter the document list by status.
               </p>
             </div>
           </div>
@@ -75,32 +84,104 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
           </button>
         </div>
 
-        {/* Quick KPI Summary Bar */}
+        {/* Quick KPI Summary Bar with Interactive Status Filters */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-6 bg-slate-950/40 border-b border-slate-800/80">
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
-            <span className="text-[11px] font-medium text-slate-400">Total Uploaded Files</span>
-            <div className="text-lg font-bold text-slate-100 font-mono mt-0.5">{totalCount}</div>
-          </div>
+          {/* Card 1: Total Files */}
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`p-3.5 rounded-2xl text-left transition-all duration-200 border cursor-pointer relative overflow-hidden group ${
+              statusFilter === 'all'
+                ? 'bg-indigo-500/15 border-indigo-500/60 ring-2 ring-indigo-500/30 shadow-lg shadow-indigo-500/10'
+                : 'bg-slate-900/80 border-slate-800 hover:border-indigo-500/40 hover:bg-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400 group-hover:text-indigo-300 transition">
+                Total Uploaded Files
+              </span>
+              {statusFilter === 'all' && (
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xl font-extrabold text-slate-100 font-mono mt-1 flex items-baseline justify-between">
+              <span>{totalCount}</span>
+              <span className="text-[10px] font-sans font-normal text-indigo-400 uppercase tracking-wider">All</span>
+            </div>
+          </button>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
-            <span className="text-[11px] font-medium text-emerald-400">Approved Files</span>
-            <div className="text-lg font-bold text-slate-100 font-mono mt-0.5">{approvedCount}</div>
-          </div>
+          {/* Card 2: Approved Files */}
+          <button
+            onClick={() => setStatusFilter('approved')}
+            className={`p-3.5 rounded-2xl text-left transition-all duration-200 border cursor-pointer relative overflow-hidden group ${
+              statusFilter === 'approved'
+                ? 'bg-emerald-500/15 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10'
+                : 'bg-slate-900/80 border-slate-800 hover:border-emerald-500/40 hover:bg-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-emerald-400 group-hover:text-emerald-300 transition">
+                Approved Files
+              </span>
+              {statusFilter === 'approved' && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xl font-extrabold text-slate-100 font-mono mt-1 flex items-baseline justify-between">
+              <span>{approvedCount}</span>
+              <span className="text-[10px] font-sans font-normal text-emerald-400 uppercase tracking-wider">Approved</span>
+            </div>
+          </button>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
-            <span className="text-[11px] font-medium text-amber-400">Pending Review/Approval</span>
-            <div className="text-lg font-bold text-slate-100 font-mono mt-0.5">{pendingCount}</div>
-          </div>
+          {/* Card 3: Pending Files */}
+          <button
+            onClick={() => setStatusFilter('pending')}
+            className={`p-3.5 rounded-2xl text-left transition-all duration-200 border cursor-pointer relative overflow-hidden group ${
+              statusFilter === 'pending'
+                ? 'bg-amber-500/15 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10'
+                : 'bg-slate-900/80 border-slate-800 hover:border-amber-500/40 hover:bg-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-amber-400 group-hover:text-amber-300 transition">
+                Pending Review/Approval
+              </span>
+              {statusFilter === 'pending' && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xl font-extrabold text-slate-100 font-mono mt-1 flex items-baseline justify-between">
+              <span>{pendingCount}</span>
+              <span className="text-[10px] font-sans font-normal text-amber-400 uppercase tracking-wider">Pending</span>
+            </div>
+          </button>
 
-          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
-            <span className="text-[11px] font-medium text-slate-400">Draft / Returned</span>
-            <div className="text-lg font-bold text-slate-100 font-mono mt-0.5">{draftCount}</div>
-          </div>
+          {/* Card 4: Draft / Returned Files */}
+          <button
+            onClick={() => setStatusFilter('draft')}
+            className={`p-3.5 rounded-2xl text-left transition-all duration-200 border cursor-pointer relative overflow-hidden group ${
+              statusFilter === 'draft'
+                ? 'bg-purple-500/15 border-purple-500/60 ring-2 ring-purple-500/30 shadow-lg shadow-purple-500/10'
+                : 'bg-slate-900/80 border-slate-800 hover:border-purple-500/40 hover:bg-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400 group-hover:text-purple-300 transition">
+                Draft / Returned
+              </span>
+              {statusFilter === 'draft' && (
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xl font-extrabold text-slate-100 font-mono mt-1 flex items-baseline justify-between">
+              <span>{draftCount}</span>
+              <span className="text-[10px] font-sans font-normal text-purple-400 uppercase tracking-wider">Draft</span>
+            </div>
+          </button>
         </div>
 
-        {/* Search Input Bar */}
-        <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-4">
-          <div className="relative flex-1">
+        {/* Search Input Bar & Active Status Filter Pill */}
+        <div className="p-4 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -110,6 +191,19 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
+
+          {statusFilter !== 'all' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">Status Filter:</span>
+              <button
+                onClick={() => setStatusFilter('all')}
+                className="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1.5 hover:bg-indigo-500/30 transition"
+              >
+                <span className="capitalize">{statusFilter} Files</span>
+                <X className="w-3.5 h-3.5 text-indigo-300" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* File Table Content */}
@@ -178,8 +272,16 @@ export default function DocumentDrillDownModal({ isOpen, onClose, dimensionType,
               </table>
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-slate-500">
-              No matching document files found for this slice.
+            <div className="py-12 text-center text-xs text-slate-500 flex flex-col items-center justify-center space-y-2">
+              <span>No matching document files found for this status filter.</span>
+              {statusFilter !== 'all' && (
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className="text-indigo-400 hover:underline text-xs font-semibold"
+                >
+                  Clear Status Filter
+                </button>
+              )}
             </div>
           )}
         </div>
