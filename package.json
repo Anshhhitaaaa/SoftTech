@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:load:system-config": "py tests/load/run_load_tests.py --target system-config",
+    "test:load:admin-api": "py tests/load/run_load_tests.py --target admin-api",
+    "test:load:all": "py tests/load/run_load_tests.py --target all"
   },
   "dependencies": {
     "docx": "^8.5.0",

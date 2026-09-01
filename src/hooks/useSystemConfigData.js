@@ -15,12 +15,32 @@ import {
   createUserApi
 } from '../services/api';
 
-const fallbackUsersList = mockUsersList.map(u => ({
-  id: u.id,
-  fullName: u.full_name,
-  departmentName: getDepartmentName(u.department_id),
-  designationName: getDesignationName(u.designation_id)
-}));
+const normalizeUser = (u, idx = 0) => {
+  if (!u) return null;
+  const uid = Number(u.id || idx + 1);
+  const deptId = u.department_id || u.departmentId || ((idx % 6) + 1);
+  const desigId = u.designation_id || u.designationId || ((idx % 6) + 1);
+  const name = u.full_name || u.fullName || u.name || `User #${uid}`;
+  const deptName = u.departmentName || u.department_name || (typeof u.department === 'string' ? u.department : getDepartmentName(deptId));
+  const desigName = u.designationName || u.designation_name || (typeof u.designation === 'string' ? u.designation : getDesignationName(desigId));
+  return {
+    ...u,
+    id: uid,
+    full_name: name,
+    fullName: name,
+    name: name,
+    department_id: Number(deptId),
+    departmentId: Number(deptId),
+    designation_id: Number(desigId),
+    designationId: Number(desigId),
+    departmentName: deptName,
+    department_name: deptName,
+    designationName: desigName,
+    designation_name: desigName
+  };
+};
+
+const fallbackUsersList = mockUsersList.map((u, idx) => normalizeUser(u, idx));
 
 /**
  * Custom Hook to handle System Configuration data (User Groups, Individual Access, DB Users)
@@ -60,18 +80,19 @@ export function useSystemConfigData() {
     }
 
     // DB Users Merge
-    let dbUsers = (lookups && lookups.users && lookups.users.length > 0) ? lookups.users : fallbackUsersList;
+    let rawUsers = (lookups && lookups.users && lookups.users.length > 0) ? lookups.users : fallbackUsersList;
     const localUsers = localStorage.getItem('softtech_users');
     if (localUsers) {
       try {
         const parsed = JSON.parse(localUsers);
         if (Array.isArray(parsed)) {
-          const existingIds = new Set(dbUsers.map(u => u.id));
+          const existingIds = new Set(rawUsers.map(u => u.id));
           const extraUsers = parsed.filter(u => !existingIds.has(u.id));
-          dbUsers = [...extraUsers, ...dbUsers];
+          rawUsers = [...extraUsers, ...rawUsers];
         }
       } catch {}
     }
+    const dbUsers = rawUsers.map((u, idx) => normalizeUser(u, idx));
     setAllDbUsers(dbUsers);
     setIsLoading(false);
   }, []);

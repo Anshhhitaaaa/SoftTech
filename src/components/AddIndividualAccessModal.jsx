@@ -108,11 +108,16 @@ export default function AddIndividualAccessModal({ isOpen, onClose, onSubmit, al
                   className="w-full appearance-none bg-white px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs text-slate-700 pr-8 shadow-2xs font-bold"
                 >
                   <option value="">Enter</option>
-                  {filteredUsers.map((usr) => (
-                    <option key={usr.id} value={usr.id}>
-                      {usr.full_name} — ({getDepartmentName(usr.department_id)}, {getDesignationName(usr.designation_id)})
-                    </option>
-                  ))}
+                  {filteredUsers.map((usr) => {
+                    const uName = usr.full_name || usr.fullName || `User #${usr.id}`;
+                    const dName = usr.departmentName || getDepartmentName(usr.department_id || usr.departmentId);
+                    const desName = usr.designationName || getDesignationName(usr.designation_id || usr.designationId);
+                    return (
+                      <option key={usr.id} value={usr.id}>
+                        {uName} — ({dName}, {desName})
+                      </option>
+                    );
+                  })}
                 </select>
                 <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-3 pointer-events-none" />
               </div>

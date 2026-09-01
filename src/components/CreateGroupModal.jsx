@@ -51,8 +51,8 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
       designation_id: Number(designationId) || 1,
       selected_user_ids: selectedUserIds.length > 0 ? selectedUserIds : [1, 2],
       users_list: selectedUserIds.length > 0
-        ? users.filter(u => selectedUserIds.includes(u.id))
-        : [users[0], users[1]],
+        ? usersToDisplay.filter(u => selectedUserIds.includes(u.id))
+        : [usersToDisplay[0], usersToDisplay[1]],
       created_at: new Date().toISOString()
     };
 
@@ -60,7 +60,7 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
     onClose();
   };
 
-  const selectedUsers = users.filter(u => selectedUserIds.includes(u.id));
+  const selectedUsers = usersToDisplay.filter(u => selectedUserIds.includes(u.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-backdrop">
@@ -151,7 +151,7 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
                     ) : (
                       selectedUsers.map(u => (
                         <span key={u.id} className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1 font-semibold">
-                          {u.full_name}
+                          {u.full_name || u.fullName}
                         </span>
                       ))
                     )}
@@ -163,6 +163,9 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
                   <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 p-1">
                     {filteredUsers.map((user) => {
                       const isSelected = selectedUserIds.includes(user.id);
+                      const userName = user.full_name || user.fullName || `User #${user.id}`;
+                      const deptName = user.departmentName || getDepartmentName(user.department_id || user.departmentId);
+                      const desigName = user.designationName || getDesignationName(user.designation_id || user.designationId);
                       return (
                         <div
                           key={user.id}
@@ -172,9 +175,9 @@ export default function CreateGroupModal({ isOpen, onClose, onSubmit, allUsers =
                           }`}
                         >
                           <div>
-                            <div className="font-bold">{user.full_name}</div>
+                            <div className="font-bold">{userName}</div>
                             <div className="text-[11px] text-slate-400">
-                              {getDepartmentName(user.department_id)} • {getDesignationName(user.designation_id)}
+                              {deptName} • {desigName}
                             </div>
                           </div>
                           {isSelected && <Check className="w-4 h-4 text-indigo-600" />}

@@ -48,14 +48,22 @@ export const users = [
   { id: 12, full_name: "Neha Kapoor", department_id: 1, designation_id: 4 }
 ];
 
-export function getDepartmentName(id) {
-  const item = departments.find(d => d.id === Number(id));
-  return item ? item.name : 'Unknown Department';
+export function getDepartmentName(val) {
+  if (!val) return "Information Technology";
+  if (typeof val === 'string' && isNaN(Number(val))) return val;
+  const numId = Number(val);
+  const item = departments.find(d => d.id === numId);
+  if (item) return item.name;
+  return departments[(Math.abs(numId) - 1) % departments.length]?.name || "Information Technology";
 }
 
-export function getDesignationName(id) {
-  const item = designations.find(d => d.id === Number(id));
-  return item ? item.name : 'Unknown Designation';
+export function getDesignationName(val) {
+  if (!val) return "Senior Specialist";
+  if (typeof val === 'string' && isNaN(Number(val))) return val;
+  const numId = Number(val);
+  const item = designations.find(d => d.id === numId);
+  if (item) return item.name;
+  return designations[(Math.abs(numId) - 1) % designations.length]?.name || "Senior Specialist";
 }
 
 export function getOfficeCategoryName(id) {
