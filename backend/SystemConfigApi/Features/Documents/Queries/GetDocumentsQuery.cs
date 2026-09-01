@@ -20,6 +20,7 @@ namespace SystemConfigApi.Features.Documents.Queries
         public async Task<IEnumerable<DocumentResponseDto>> Handle(GetDocumentsQuery request, CancellationToken cancellationToken)
         {
             var query = _context.Documents
+                .AsNoTracking()
                 .Include(d => d.CreatedByUser)
                 .Include(d => d.ReviewedByUser)
                 .Include(d => d.ApprovedByUser)

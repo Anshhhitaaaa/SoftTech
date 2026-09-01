@@ -27,11 +27,11 @@ namespace SystemConfigApi.Features.Lookups.Queries
 
         public async Task<LookupsResultDto> Handle(GetAllLookupsQuery request, CancellationToken cancellationToken)
         {
-            var categories = await _context.OfficeCategories.ToListAsync(cancellationToken);
-            var offices = await _context.Offices.ToListAsync(cancellationToken);
-            var departments = await _context.Departments.ToListAsync(cancellationToken);
-            var designations = await _context.Designations.ToListAsync(cancellationToken);
-            var users = await _context.Users.ToListAsync(cancellationToken);
+            var categories = await _context.OfficeCategories.AsNoTracking().ToListAsync(cancellationToken);
+            var offices = await _context.Offices.AsNoTracking().ToListAsync(cancellationToken);
+            var departments = await _context.Departments.AsNoTracking().ToListAsync(cancellationToken);
+            var designations = await _context.Designations.AsNoTracking().ToListAsync(cancellationToken);
+            var users = await _context.Users.AsNoTracking().ToListAsync(cancellationToken);
 
             return new LookupsResultDto
             {

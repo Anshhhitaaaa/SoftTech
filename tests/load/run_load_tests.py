@@ -39,6 +39,7 @@ def run_locust_suite(locust_file, host, target_name, users, spawn_rate, run_time
         "--users", str(users),
         "--spawn-rate", str(spawn_rate),
         "--run-time", run_time,
+        "--stop-timeout", "2",
         "--headless",
         "--html", html_report,
         "--csv", csv_prefix
