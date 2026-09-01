@@ -1,0 +1,8 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,/api/UserGroups [List],"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",2,2026-09-01T14:19:41Z,2026-09-01T14:19:43Z
+GET,/api/Documents [List],"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",4,2026-09-01T14:19:41Z,2026-09-01T14:19:43Z
+GET,/api/Lookup/all [Warmup],"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",20,2026-09-01T14:19:36Z,2026-09-01T14:19:39Z
+POST,/api/Documents [Create],"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",2,2026-09-01T14:19:40Z,2026-09-01T14:19:41Z
+GET,/api/Lookup/all,"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",9,2026-09-01T14:19:40Z,2026-09-01T14:19:43Z
+GET,/api/Documents/{id},"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",1,2026-09-01T14:19:40Z,2026-09-01T14:19:40Z
+POST,/api/Users [Create],"ConnectionRefusedError(10061, '[WinError 10061] No connection could be made because the target machine actively refused it.')",2,2026-09-01T14:19:40Z,2026-09-01T14:19:43Z

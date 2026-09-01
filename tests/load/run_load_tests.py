@@ -4,6 +4,11 @@ import argparse
 import subprocess
 import csv
 import time
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
 from config import (
     SYSTEM_CONFIG_API_HOST,
     ADMIN_API_HOST,
@@ -51,6 +56,12 @@ def run_locust_suite(locust_file, host, target_name, users, spawn_rate, run_time
     sla_passed = verify_sla_performance(stats_csv, target_name, html_report)
     return sla_passed
 
+def safe_float(val, default=0.0):
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 def verify_sla_performance(stats_csv_path, target_name, html_report):
     if not os.path.exists(stats_csv_path):
         print(f"⚠️ Warning: Stats CSV file {stats_csv_path} not found.")
@@ -72,13 +83,13 @@ def verify_sla_performance(stats_csv_path, target_name, html_report):
         reader = csv.DictReader(f)
         for row in reader:
             if row.get("Name") == "Aggregated":
-                total_requests = int(row.get("Request Count", 0))
-                total_failures = int(row.get("Failure Count", 0))
-                total_rps = float(row.get("Requests/s", 0.0))
-                p50_latency = float(row.get("50%", 0.0))
-                p90_latency = float(row.get("90%", 0.0))
-                p95_latency = float(row.get("95%", 0.0))
-                p99_latency = float(row.get("99%", 0.0))
+                total_requests = int(safe_float(row.get("Request Count", 0)))
+                total_failures = int(safe_float(row.get("Failure Count", 0)))
+                total_rps = safe_float(row.get("Requests/s", 0.0))
+                p50_latency = safe_float(row.get("50%", 0.0))
+                p90_latency = safe_float(row.get("90%", 0.0))
+                p95_latency = safe_float(row.get("95%", 0.0))
+                p99_latency = safe_float(row.get("99%", 0.0))
                 break
 
     error_rate = (total_failures / total_requests * 100.0) if total_requests > 0 else 0.0
