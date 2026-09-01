@@ -17,10 +17,10 @@ class Settings(BaseSettings):
     ADMIN_ROLE: str = "admin"
     
     # Database
-    # Standard PostgreSQL string or fallback SQLite file
+    # Render PostgreSQL database connection string
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'database', 'admin_analytics.db')}"
+        "postgresql://system_config_db_user:QVuInDcU0ZU5VHmoxRCmQduZQ3bD5EEk@dpg-dabd9tss728c73acarlg-a.oregon-postgres.render.com/system_config_db_zap3"
     )
 
 settings = Settings()
