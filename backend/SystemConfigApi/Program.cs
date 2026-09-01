@@ -31,7 +31,7 @@ var rawConnStr = builder.Configuration.GetConnectionString("PostgreSQLConnection
 
 var connectionString = ParsePostgresConnectionString(rawConnStr);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContextPool<AppDbContext>(options =>
 {
     if (!string.IsNullOrEmpty(connectionString))
     {
@@ -86,7 +86,7 @@ static string ParsePostgresConnectionString(string? connStr)
             var host = uri.Host;
             var port = uri.Port > 0 ? uri.Port : 5432;
             var database = uri.AbsolutePath.TrimStart('/');
-            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Pooling=true;Minimum Pool Size=2;Maximum Pool Size=25;Timeout=15;";
         }
         catch
         {
